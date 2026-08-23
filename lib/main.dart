@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// Chuyển thành StatelessWidget vì ứng dụng hiện tại chỉ hiển thị Text tĩnh, 
+// Chuyển thành StatelessWidget vì ứng dụng hiện tại chỉ hiển thị Text tĩnh,
 // không cần thay đổi trạng thái (State) như lúc đếm số nữa.
 class MyHomePage extends StatelessWidget {
   const MyHomePage({super.key, required this.title});
@@ -43,7 +43,7 @@ class MyHomePage extends StatelessWidget {
           style: TextStyle(
             fontSize: 24, // Tăng kích thước chữ cho dễ nhìn
             fontWeight: FontWeight.bold, // In đậm
-            color: Colors.deepPurple, // Đổi màu chữ
+            color: Colors.black, // Đổi màu chữ
           ),
         ),
       ),

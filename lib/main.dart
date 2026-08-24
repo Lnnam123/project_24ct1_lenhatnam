@@ -41,7 +41,7 @@ class MyHomePage extends StatelessWidget {
           'Chào các bạn khoá 24CT đến với học phần CNPM-DAU',
           textAlign: TextAlign.center, // Căn giữa chữ
           style: TextStyle(
-            fontSize: 24, // Tăng kích thước chữ cho dễ nhìn
+            fontSize: 24,
             fontWeight: FontWeight.bold, // In đậm
             color: Colors.black, // Đổi màu chữ
           ),

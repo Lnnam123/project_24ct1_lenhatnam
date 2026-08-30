@@ -8,20 +8,26 @@ class ManHinhTongQuan extends StatefulWidget {
   final NguoiDung nguoiDung;
   final List<GiaoDich> danhSachGiaoDich;
   final List<ViTien> danhSachVi;
+  final List<DanhMuc> danhSachDanhMuc;
   final NganSach nganSach;
   final VoidCallback moThemGiaoDich;
   final VoidCallback xemTatCaGiaoDich;
   final VoidCallback moThongBao;
+  final Function(int transactionId, DanhMuc danhMucMoi)? onDoiDanhMucGiaoDich;
+  final Future<void> Function()? onRefresh;
 
   const ManHinhTongQuan({
     super.key,
     required this.nguoiDung,
     required this.danhSachGiaoDich,
     required this.danhSachVi,
+    required this.danhSachDanhMuc,
     required this.nganSach,
     required this.moThemGiaoDich,
     required this.xemTatCaGiaoDich,
     required this.moThongBao,
+    this.onDoiDanhMucGiaoDich,
+    this.onRefresh,
   });
 
   @override
@@ -88,12 +94,16 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Welcome message
+      body: widget.onRefresh != null 
+        ? RefreshIndicator(
+            onRefresh: widget.onRefresh!,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Welcome message
             Text(
               'Xin chào, ${widget.nguoiDung.hoTen}!',
               style: GoogleFonts.manrope(
@@ -325,6 +335,27 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                     },
                   ),
             const SizedBox(height: 80), // bottom padding for FAB & Nav
+          ],
+        ),
+      )
+    )
+    : SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Welcome message
+            Text(
+              'Xin chào, ${widget.nguoiDung.hoTen}!',
+              style: GoogleFonts.manrope(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: MauSac.onSurface,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Center(child: Text('Dữ liệu đang tải...')),
+            const SizedBox(height: 80),
           ],
         ),
       ),

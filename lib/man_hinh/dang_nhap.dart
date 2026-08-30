@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../chu_de/mau_sac.dart';
 import '../du_lieu/database_helper.dart';
 import 'dang_ky.dart';
 import '../main.dart'; // To access ManHinhChinh (we will refactor this later if needed)
 
+import 'dang_nhap_nhanh.dart';
+
 class ManHinhDangNhap extends StatefulWidget {
-  const ManHinhDangNhap({super.key});
+  final bool allowRedirect;
+  const ManHinhDangNhap({super.key, this.allowRedirect = true});
 
   @override
   State<ManHinhDangNhap> createState() => _ManHinhDangNhapState();
@@ -17,6 +21,34 @@ class _ManHinhDangNhapState extends State<ManHinhDangNhap> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.allowRedirect) {
+      _checkSavedUser();
+    }
+  }
+
+  void _checkSavedUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedUserId = prefs.getInt('saved_user_id');
+    final savedUserName = prefs.getString('saved_user_name');
+    final savedUserEmail = prefs.getString('saved_user_email');
+
+    if (savedUserId != null && savedUserName != null && savedUserEmail != null) {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => ManHinhDangNhapNhanh(
+            savedUserId: savedUserId,
+            savedUserName: savedUserName,
+            savedUserEmail: savedUserEmail,
+          ),
+        ),
+      );
+    }
+  }
 
   void _dangNhap() async {
     final email = _emailController.text.trim();
@@ -36,6 +68,11 @@ class _ManHinhDangNhapState extends State<ManHinhDangNhap> {
     setState(() => _isLoading = false);
 
     if (user != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('saved_user_id', user.id);
+      await prefs.setString('saved_user_name', user.hoTen);
+      await prefs.setString('saved_user_email', user.email);
+
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => ManHinhChinh(nguoiDung: user)),

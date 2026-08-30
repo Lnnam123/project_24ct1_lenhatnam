@@ -78,6 +78,44 @@ app.post('/api/wallets', (req, res) => {
     });
 });
 
+// Lấy danh sách danh mục (Mặc định + Của người dùng)
+app.get('/api/categories/:userId', (req, res) => {
+    const query = `SELECT category_id AS id, name, type, icon, color FROM categories WHERE user_id IS NULL OR user_id = ?`;
+    db.query(query, [req.params.userId], (err, results) => {
+        if (err) res.status(500).json({ error: err.message });
+        else res.json(results);
+    });
+});
+
+// Thêm danh mục mới
+app.post('/api/categories', (req, res) => {
+    const { user_id, name, type, icon, color } = req.body;
+    const insertCat = `INSERT INTO categories (user_id, name, type, icon, color) VALUES (?, ?, ?, ?, ?)`;
+    db.query(insertCat, [user_id, name, type, icon, color], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: result.insertId });
+    });
+});
+
+// Cập nhật danh mục
+app.put('/api/categories/:id', (req, res) => {
+    const { name, type, icon, color } = req.body;
+    const updateCat = `UPDATE categories SET name = ?, type = ?, icon = ?, color = ? WHERE category_id = ?`;
+    db.query(updateCat, [name, type, icon, color, req.params.id], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// Xóa danh mục
+app.delete('/api/categories/:id', (req, res) => {
+    const deleteCat = `DELETE FROM categories WHERE category_id = ?`;
+    db.query(deleteCat, [req.params.id], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
 
 // Thêm giao dịch
 app.post('/api/transactions', (req, res) => {
@@ -100,10 +138,20 @@ app.post('/api/transactions', (req, res) => {
 
 // Lấy giao dịch
 app.get('/api/transactions/:userId', (req, res) => {
-    const query = `SELECT transaction_id AS id, note, amount, type, wallet_id, transaction_date AS date FROM transactions WHERE user_id = ? ORDER BY transaction_date DESC, transaction_id DESC`;
+    const query = `SELECT transaction_id AS id, note, amount, type, wallet_id, category_id, transaction_date AS date FROM transactions WHERE user_id = ? ORDER BY transaction_date DESC, transaction_id DESC`;
     db.query(query, [req.params.userId], (err, results) => {
         if (err) res.status(500).json({ error: err.message });
         else res.json(results);
+    });
+});
+
+// Cập nhật danh mục / thông tin giao dịch
+app.put('/api/transactions/:id', (req, res) => {
+    const { category_id, note, amount, wallet_id } = req.body;
+    const query = `UPDATE transactions SET category_id = COALESCE(?, category_id), note = COALESCE(?, note), amount = COALESCE(?, amount), wallet_id = COALESCE(?, wallet_id) WHERE transaction_id = ?`;
+    db.query(query, [category_id, note, amount, wallet_id, req.params.id], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
     });
 });
 

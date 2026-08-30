@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
 
-  // Dùng IP này để kết nối tới localhost từ Android Emulator
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
+  // Dùng IP thật của máy tính để cả máy ảo và máy thật đều có thể truy cập
+  static const String baseUrl = 'http://192.168.1.9:3000/api';
 
   DatabaseHelper._init();
 
@@ -78,13 +78,73 @@ class DatabaseHelper {
     return [];
   }
 
-  Future<List<DanhMuc>> getCategories() async {
-    // Trả về danh mục cứng vì Node.js chưa có bảng Category để đơn giản hóa
+  Future<List<DanhMuc>> getCategories([int? userId]) async {
+    if (userId != null) {
+      try {
+        final response = await http.get(Uri.parse('$baseUrl/categories/$userId'));
+        if (response.statusCode == 200) {
+          final List data = jsonDecode(response.body);
+          if (data.isNotEmpty) {
+            return data.map((m) => DanhMuc.fromMap(m)).toList();
+          }
+        }
+      } catch (e) {
+        debugPrint('Lỗi getCategories: $e');
+      }
+    }
+
     return [
       DanhMuc(id: 1, ten: 'Ăn uống', loai: LoaiGiaoDich.chiTieu, icon: Icons.restaurant, mauSac: const Color(0xFFEF4444)),
       DanhMuc(id: 2, ten: 'Mua sắm', loai: LoaiGiaoDich.chiTieu, icon: Icons.shopping_cart, mauSac: const Color(0xFFF59E0B)),
       DanhMuc(id: 3, ten: 'Lương', loai: LoaiGiaoDich.thuNhap, icon: Icons.payments, mauSac: const Color(0xFF10B981)),
+      DanhMuc(id: 4, ten: 'Di chuyển', loai: LoaiGiaoDich.chiTieu, icon: Icons.directions_car, mauSac: const Color(0xFF2563EB)),
+      DanhMuc(id: 5, ten: 'Giải trí', loai: LoaiGiaoDich.chiTieu, icon: Icons.movie, mauSac: const Color(0xFF712AE2)),
     ];
+  }
+
+  Future<void> insertCategory(DanhMuc category, int userId) async {
+    try {
+      final colorHex = '#${category.mauSac.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+      await http.post(
+        Uri.parse('$baseUrl/categories'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': userId,
+          'name': category.ten,
+          'type': category.loai == LoaiGiaoDich.chiTieu ? 'EXPENSE' : 'INCOME',
+          'icon': category.iconName,
+          'color': colorHex,
+        }),
+      );
+    } catch (e) {
+      debugPrint('Lỗi insertCategory: $e');
+    }
+  }
+
+  Future<void> updateCategory(DanhMuc category) async {
+    try {
+      final colorHex = '#${category.mauSac.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+      await http.put(
+        Uri.parse('$baseUrl/categories/${category.id}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'name': category.ten,
+          'type': category.loai == LoaiGiaoDich.chiTieu ? 'EXPENSE' : 'INCOME',
+          'icon': category.iconName,
+          'color': colorHex,
+        }),
+      );
+    } catch (e) {
+      debugPrint('Lỗi updateCategory: $e');
+    }
+  }
+
+  Future<void> deleteCategory(int categoryId) async {
+    try {
+      await http.delete(Uri.parse('$baseUrl/categories/$categoryId'));
+    } catch (e) {
+      debugPrint('Lỗi deleteCategory: $e');
+    }
   }
 
   Future<List<ThongBao>> getNotifications(int userId) async {
@@ -103,7 +163,13 @@ class DatabaseHelper {
         final List data = jsonDecode(response.body);
         return data.map((m) {
           final wallet = wallets.firstWhere((w) => w.id == m['wallet_id'], orElse: () => wallets.first);
-          final cat = categories.firstWhere((c) => c.loai == (m['type'] == 'EXPENSE' ? LoaiGiaoDich.chiTieu : LoaiGiaoDich.thuNhap), orElse: () => categories.first);
+          final cat = categories.firstWhere(
+            (c) => c.id.toString() == m['category_id']?.toString(),
+            orElse: () => categories.firstWhere(
+              (c) => c.loai == (m['type'] == 'EXPENSE' ? LoaiGiaoDich.chiTieu : LoaiGiaoDich.thuNhap),
+              orElse: () => categories.first,
+            ),
+          );
           
           return GiaoDich(
             id: m['id'],
@@ -141,6 +207,20 @@ class DatabaseHelper {
         'note': tx.tieuDe,
       }),
     );
+  }
+
+  Future<void> updateTransactionCategory(int transactionId, int categoryId) async {
+    try {
+      await http.put(
+        Uri.parse('$baseUrl/transactions/$transactionId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'category_id': categoryId,
+        }),
+      );
+    } catch (e) {
+      debugPrint('Lỗi updateTransactionCategory: $e');
+    }
   }
 
   Future<void> insertWallet(ViTien wallet, int userId) async {

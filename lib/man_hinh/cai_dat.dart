@@ -1,14 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../chu_de/mau_sac.dart';
 
 import '../mo_hinh/du_lieu.dart';
 import 'dang_nhap.dart';
+import 'dang_nhap_nhanh.dart';
+import 'quan_ly_danh_muc.dart';
 
 class ManHinhCaiDat extends StatefulWidget {
   final NguoiDung nguoiDung;
-  const ManHinhCaiDat({super.key, required this.nguoiDung});
+  final List<DanhMuc>? danhSachDanhMuc;
+  final Function(DanhMuc danhMucMoi)? onThemDanhMuc;
+  final Function(DanhMuc danhMucSua)? onCapNhatDanhMuc;
+  final Function(int danhMucId)? onXoaDanhMuc;
+
+  const ManHinhCaiDat({
+    super.key,
+    required this.nguoiDung,
+    this.danhSachDanhMuc,
+    this.onThemDanhMuc,
+    this.onCapNhatDanhMuc,
+    this.onXoaDanhMuc,
+  });
 
   @override
   State<ManHinhCaiDat> createState() => _ManHinhCaiDatState();
@@ -133,6 +148,26 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
                 onTap: () {},
               ),
               _buildSettingsItem(
+                icon: Icons.category,
+                title: 'Quản lý danh mục thu/chi',
+                onTap: () {
+                  if (widget.onThemDanhMuc != null &&
+                      widget.onCapNhatDanhMuc != null &&
+                      widget.onXoaDanhMuc != null) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ManHinhQuanLyDanhMuc(
+                          danhSachDanhMuc: widget.danhSachDanhMuc ?? [],
+                          onThemDanhMuc: widget.onThemDanhMuc!,
+                          onCapNhatDanhMuc: widget.onCapNhatDanhMuc!,
+                          onXoaDanhMuc: widget.onXoaDanhMuc!,
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+              _buildSettingsItem(
                 icon: Icons.key,
                 title: 'Đổi mật khẩu',
                 onTap: () {},
@@ -216,11 +251,30 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const ManHinhDangNhap()),
-                    (route) => false,
-                  );
+                onPressed: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  final savedUserId = prefs.getInt('saved_user_id');
+                  final savedUserName = prefs.getString('saved_user_name');
+                  final savedUserEmail = prefs.getString('saved_user_email');
+                  
+                  if (!context.mounted) return;
+                  if (savedUserId != null && savedUserName != null && savedUserEmail != null) {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (_) => ManHinhDangNhapNhanh(
+                          savedUserId: savedUserId,
+                          savedUserName: savedUserName,
+                          savedUserEmail: savedUserEmail,
+                        ),
+                      ),
+                      (route) => false,
+                    );
+                  } else {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const ManHinhDangNhap()),
+                      (route) => false,
+                    );
+                  }
                 },
                 icon: const Icon(Icons.logout),
                 label: Text(

@@ -180,49 +180,55 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
                   ),
                 ),
                 const SizedBox(height: 12),
-                SizedBox(
-                  height: 44,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: widget.danhSachDanhMuc.length,
-                    separatorBuilder: (ctx, i) => const SizedBox(width: 8),
-                    itemBuilder: (ctx, i) {
-                      final cat = widget.danhSachDanhMuc[i];
-                      final isSelected = _danhMucDangChon.id == cat.id;
-                      
-                      return GestureDetector(
-                        onTap: () => setState(() => _danhMucDangChon = cat),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: isSelected ? MauSac.primaryContainer.withValues(alpha: 0.2) : MauSac.surfaceContainerLow,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: isSelected ? Colors.transparent : MauSac.borderSubtle,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                cat.icon,
-                                size: 18,
-                                color: isSelected ? MauSac.primary : MauSac.onSurfaceVariant,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                cat.ten,
-                                style: GoogleFonts.manrope(
-                                  fontSize: 14,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                  color: isSelected ? MauSac.primary : MauSac.onSurfaceVariant,
+                Builder(
+                  builder: (ctx) {
+                    final categoriesFiltered = widget.danhSachDanhMuc;
+
+                    return SizedBox(
+                      height: 44,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: categoriesFiltered.length,
+                        separatorBuilder: (ctx, i) => const SizedBox(width: 8),
+                        itemBuilder: (ctx, i) {
+                          final cat = categoriesFiltered[i];
+                          final isSelected = _danhMucDangChon.id == cat.id;
+                          
+                          return GestureDetector(
+                            onTap: () => setState(() => _danhMucDangChon = cat),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: isSelected ? MauSac.primaryContainer.withValues(alpha: 0.2) : MauSac.surfaceContainerLow,
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(
+                                  color: isSelected ? Colors.transparent : MauSac.borderSubtle,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    cat.icon,
+                                    size: 18,
+                                    color: isSelected ? MauSac.primary : MauSac.onSurfaceVariant,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    cat.ten,
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 14,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      color: isSelected ? MauSac.primary : MauSac.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 32),
 

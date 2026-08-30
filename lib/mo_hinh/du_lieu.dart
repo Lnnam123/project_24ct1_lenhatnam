@@ -122,12 +122,28 @@ class DanhMuc {
     required this.mauSac,
   });
 
+  String get iconName {
+    if (icon == Icons.shopping_cart) return 'shopping_cart';
+    if (icon == Icons.restaurant) return 'restaurant';
+    if (icon == Icons.directions_car) return 'directions_car';
+    if (icon == Icons.health_and_safety) return 'health_and_safety';
+    if (icon == Icons.movie) return 'movie';
+    if (icon == Icons.home) return 'home';
+    if (icon == Icons.school) return 'school';
+    if (icon == Icons.flight) return 'flight';
+    if (icon == Icons.payments) return 'payments';
+    if (icon == Icons.trending_up) return 'trending_up';
+    if (icon == Icons.sports_esports) return 'sports_esports';
+    if (icon == Icons.receipt_long) return 'receipt_long';
+    return 'category';
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'category_id': id,
       'name': ten,
       'type': loai == LoaiGiaoDich.chiTieu ? 'EXPENSE' : 'INCOME',
-      'icon': icon.codePoint.toString(),
+      'icon': iconName,
       'color': '#${mauSac.toARGB32().toRadixString(16).substring(2).toUpperCase()}',
     };
   }
@@ -136,6 +152,12 @@ class DanhMuc {
     IconData getIcon(String? iconName) {
       if (iconName == 'restaurant') return Icons.restaurant;
       if (iconName == 'shopping_cart') return Icons.shopping_cart;
+      if (iconName == 'directions_car') return Icons.directions_car;
+      if (iconName == 'health_and_safety') return Icons.health_and_safety;
+      if (iconName == 'movie') return Icons.movie;
+      if (iconName == 'home') return Icons.home;
+      if (iconName == 'school') return Icons.school;
+      if (iconName == 'flight') return Icons.flight;
       if (iconName == 'sports_esports') return Icons.sports_esports;
       if (iconName == 'receipt_long') return Icons.receipt_long;
       if (iconName == 'payments') return Icons.payments;
@@ -153,8 +175,8 @@ class DanhMuc {
     }
 
     return DanhMuc(
-      id: map['category_id'],
-      ten: map['name'],
+      id: map['category_id'] ?? map['id'],
+      ten: map['name'] ?? map['ten'] ?? '',
       loai: map['type'] == 'INCOME' ? LoaiGiaoDich.thuNhap : LoaiGiaoDich.chiTieu,
       icon: getIcon(map['icon']),
       mauSac: getColor(map['color']),

@@ -8,8 +8,8 @@ import '../chu_de/mau_sac.dart';
 
 class UpdateService {
   // Thay đổi thông tin repo GitHub của bạn ở đây
-  static const String githubOwner = 'lenhatnam';
-  static const String githubRepo = 'project_24ct_lenhatnam';
+  static const String githubOwner = 'Lnnam123';
+  static const String githubRepo = 'appandroid';
   
   static Future<void> kiemTraCapNhat(BuildContext context, {bool hienThongBaoKhongCo = false}) async {
     try {

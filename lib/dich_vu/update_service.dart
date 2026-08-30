@@ -46,24 +46,22 @@ class UpdateService {
         } else {
           // Đã ở phiên bản mới nhất
           if (hienThongBaoKhongCo && context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Bạn đang sử dụng phiên bản mới nhất!')),
-            );
+            _hienThongBaoSnackBar(context, 'Bạn đang sử dụng phiên bản mới nhất!');
           }
+        }
+      } else if (response.statusCode == 404) {
+        if (hienThongBaoKhongCo && context.mounted) {
+          _hienThongBaoSnackBar(context, 'Chưa có bản cập nhật nào trên hệ thống.');
         }
       } else {
         if (hienThongBaoKhongCo && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Không thể kiểm tra cập nhật lúc này.')),
-          );
+          _hienThongBaoSnackBar(context, 'Không thể kiểm tra cập nhật (Lỗi ${response.statusCode}).', isError: true);
         }
       }
     } catch (e) {
       debugPrint('Lỗi kiểm tra cập nhật: $e');
       if (hienThongBaoKhongCo && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Đã xảy ra lỗi: $e')),
-        );
+        _hienThongBaoSnackBar(context, 'Đã xảy ra lỗi: $e', isError: true);
       }
     }
   }
@@ -147,17 +145,13 @@ class UpdateService {
           } else if (event.status == OtaStatus.PERMISSION_NOT_GRANTED_ERROR) {
             if (context.mounted) {
               if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Lỗi: Ứng dụng không được cấp quyền ghi bộ nhớ!')),
-              );
+              _hienThongBaoSnackBar(context, 'Lỗi: Ứng dụng không được cấp quyền ghi bộ nhớ!', isError: true);
             }
           } else if (event.status != OtaStatus.DOWNLOADING) {
             // Các lỗi khác
             if (context.mounted) {
               if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Có lỗi trong quá trình cập nhật!')),
-              );
+              _hienThongBaoSnackBar(context, 'Có lỗi trong quá trình cập nhật!', isError: true);
             }
           }
         },
@@ -165,11 +159,22 @@ class UpdateService {
     } catch (e) {
       if (context.mounted) {
         if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi khởi chạy tải xuống: $e')),
-        );
+        _hienThongBaoSnackBar(context, 'Lỗi khởi chạy tải xuống: $e', isError: true);
       }
     }
+  }
+
+  static void _hienThongBaoSnackBar(BuildContext context, String thongBao, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          thongBao,
+          style: GoogleFonts.manrope(color: MauSac.surface),
+        ),
+        backgroundColor: isError ? MauSac.error : MauSac.success,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   // Hàm helper so sánh 2 chuỗi version, trả về > 0 nếu v1 > v2

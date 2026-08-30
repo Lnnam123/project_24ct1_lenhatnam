@@ -13,6 +13,7 @@ import 'thong_tin_ca_nhan.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'doi_mat_khau.dart';
 import '../dich_vu/update_service.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class ManHinhCaiDat extends StatefulWidget {
   final NguoiDung nguoiDung;
@@ -38,6 +39,22 @@ class ManHinhCaiDat extends StatefulWidget {
 
 class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
   bool _batKhieuUngDung = true;
+  String _appVersion = 'Đang tải...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _appVersion = 'v${info.version}';
+      });
+    }
+  }
 
   ImageProvider _getAvatarProvider() {
     final path = widget.nguoiDung.avatarUrl;
@@ -167,11 +184,7 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
                   );
                 },
               ),
-              _buildSettingsItem(
-                icon: Icons.key,
-                title: 'Đổi mật khẩu',
-                onTap: () {},
-              ),
+
             ]),
             const SizedBox(height: 24),
 
@@ -241,7 +254,7 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
               _buildSettingsItem(
                 icon: Icons.info,
                 title: 'Phiên bản ứng dụng',
-                trailingText: 'v1.0.2',
+                trailingText: _appVersion,
                 showChevron: false,
               ),
             ]),

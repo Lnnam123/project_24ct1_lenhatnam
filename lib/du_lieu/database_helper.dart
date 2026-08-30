@@ -1,31 +1,29 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../mo_hinh/du_lieu.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../mo_hinh/du_lieu.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
-
-  // Dùng IP thật của máy tính để cả máy ảo và máy thật đều có thể truy cập
-  static const String baseUrl = 'http://192.168.1.9:3000/api';
+  
+  final _supabase = Supabase.instance.client;
 
   DatabaseHelper._init();
 
   // --- Auth Methods ---
   Future<NguoiDung?> login(String email, String password) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
-      );
+      final response = await _supabase
+          .from('users')
+          .select()
+          .eq('email', email)
+          .eq('password_hash', password)
+          .maybeSingle();
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      if (response != null) {
         return NguoiDung(
-          id: data['id'],
-          hoTen: data['name'],
-          email: data['email'],
+          id: response['user_id'],
+          hoTen: response['full_name'],
+          email: response['email'],
           soDienThoai: '',
           matKhau: '',
         );
@@ -36,42 +34,104 @@ class DatabaseHelper {
     return null;
   }
 
-  Future<NguoiDung> register(String name, String email, String password) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/register'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'name': name, 'email': email, 'password': password}),
-    );
+  Future<bool> changePassword(int userId, String oldPassword, String newPassword) async {
+    try {
+      // Xác minh mật khẩu cũ trước khi đổi
+      final response = await _supabase
+          .from('users')
+          .select()
+          .eq('user_id', userId)
+          .eq('password_hash', oldPassword)
+          .maybeSingle();
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      if (response == null) {
+        return false; // Mật khẩu cũ không đúng
+      }
+
+      // Cập nhật mật khẩu mới
+      await _supabase
+          .from('users')
+          .update({'password_hash': newPassword})
+          .eq('user_id', userId);
+      return true;
+    } catch (e) {
+      debugPrint('Lỗi đổi mật khẩu: $e');
+      return false;
+    }
+  }
+
+  Future<NguoiDung> register(String name, String email, String password) async {
+    try {
+      // Postgres duplicate entry error will throw an exception
+      final response = await _supabase
+          .from('users')
+          .insert({
+            'full_name': name,
+            'email': email,
+            'password_hash': password,
+          })
+          .select()
+          .single();
+
+      final userId = response['user_id'];
+
+      // Tạo ví mặc định
+      await _supabase.from('wallets').insert({
+        'user_id': userId,
+        'wallet_name': 'Ví Tiền Mặt',
+        'wallet_type': 'CASH',
+        'balance': 0,
+        'icon': 'payments',
+        'color': '#10B981',
+      });
+
       return NguoiDung(
-        id: data['id'],
-        hoTen: data['name'],
-        email: data['email'],
+        id: userId,
+        hoTen: name,
+        email: email,
         soDienThoai: '',
         matKhau: '',
       );
-    } else {
-      throw Exception('Đăng ký thất bại');
+    } catch (e) {
+      debugPrint('Lỗi register: $e');
+      if (e.toString().contains('23505') || e.toString().contains('duplicate key')) {
+        throw Exception('Email đã tồn tại');
+      }
+      throw Exception('Đăng ký thất bại: $e');
+    }
+  }
+
+  Future<void> updateUser(NguoiDung user) async {
+    try {
+      await _supabase.from('users').update({
+        'full_name': user.hoTen,
+        'email': user.email,
+        'phone_number': user.soDienThoai,
+        'avatar_url': user.avatarUrl,
+      }).eq('user_id', user.id);
+    } catch (e) {
+      debugPrint('Lỗi updateUser: $e');
+      throw Exception('Cập nhật thông tin thất bại: $e');
     }
   }
 
   // --- Data Methods ---
   Future<List<ViTien>> getWallets(int userId) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/wallets/$userId'));
-      if (response.statusCode == 200) {
-        final List data = jsonDecode(response.body);
-        return data.map((m) => ViTien(
-          id: m['id'],
-          tenVi: m['name'],
-          loaiVi: 'CASH',
-          soDu: double.tryParse(m['balance']?.toString() ?? '0') ?? 0.0,
-          icon: Icons.account_balance_wallet,
-          mauSac: const Color(0xFF10B981),
-        )).toList();
-      }
+      final response = await _supabase
+          .from('wallets')
+          .select()
+          .eq('user_id', userId)
+          .eq('is_active', true);
+
+      return (response as List).map((m) => ViTien(
+        id: m['wallet_id'],
+        tenVi: m['wallet_name'],
+        loaiVi: m['wallet_type'] ?? 'CASH',
+        soDu: double.tryParse(m['balance']?.toString() ?? '0') ?? 0.0,
+        icon: _getIconFromString(m['icon']),
+        mauSac: _getColorFromString(m['color']),
+      )).toList();
     } catch (e) {
       debugPrint('Lỗi getWallets: $e');
     }
@@ -79,18 +139,27 @@ class DatabaseHelper {
   }
 
   Future<List<DanhMuc>> getCategories([int? userId]) async {
-    if (userId != null) {
-      try {
-        final response = await http.get(Uri.parse('$baseUrl/categories/$userId'));
-        if (response.statusCode == 200) {
-          final List data = jsonDecode(response.body);
-          if (data.isNotEmpty) {
-            return data.map((m) => DanhMuc.fromMap(m)).toList();
-          }
-        }
-      } catch (e) {
-        debugPrint('Lỗi getCategories: $e');
+    try {
+      var query = _supabase.from('categories').select();
+      if (userId != null) {
+        query = query.or('user_id.eq.$userId,user_id.is.null');
+      } else {
+        query = query.filter('user_id', 'is', null);
       }
+
+      final response = await query;
+      
+      if ((response as List).isNotEmpty) {
+        return response.map((m) => DanhMuc(
+          id: m['category_id'],
+          ten: m['name'],
+          loai: m['type'] == 'EXPENSE' ? LoaiGiaoDich.chiTieu : LoaiGiaoDich.thuNhap,
+          icon: _getIconFromString(m['icon']),
+          mauSac: _getColorFromString(m['color']),
+        )).toList();
+      }
+    } catch (e) {
+      debugPrint('Lỗi getCategories: $e');
     }
 
     return [
@@ -105,17 +174,13 @@ class DatabaseHelper {
   Future<void> insertCategory(DanhMuc category, int userId) async {
     try {
       final colorHex = '#${category.mauSac.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
-      await http.post(
-        Uri.parse('$baseUrl/categories'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'user_id': userId,
-          'name': category.ten,
-          'type': category.loai == LoaiGiaoDich.chiTieu ? 'EXPENSE' : 'INCOME',
-          'icon': category.iconName,
-          'color': colorHex,
-        }),
-      );
+      await _supabase.from('categories').insert({
+        'user_id': userId,
+        'name': category.ten,
+        'type': category.loai == LoaiGiaoDich.chiTieu ? 'EXPENSE' : 'INCOME',
+        'icon': category.iconName,
+        'color': colorHex,
+      });
     } catch (e) {
       debugPrint('Lỗi insertCategory: $e');
     }
@@ -124,16 +189,12 @@ class DatabaseHelper {
   Future<void> updateCategory(DanhMuc category) async {
     try {
       final colorHex = '#${category.mauSac.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
-      await http.put(
-        Uri.parse('$baseUrl/categories/${category.id}'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'name': category.ten,
-          'type': category.loai == LoaiGiaoDich.chiTieu ? 'EXPENSE' : 'INCOME',
-          'icon': category.iconName,
-          'color': colorHex,
-        }),
-      );
+      await _supabase.from('categories').update({
+        'name': category.ten,
+        'type': category.loai == LoaiGiaoDich.chiTieu ? 'EXPENSE' : 'INCOME',
+        'icon': category.iconName,
+        'color': colorHex,
+      }).eq('category_id', category.id);
     } catch (e) {
       debugPrint('Lỗi updateCategory: $e');
     }
@@ -141,14 +202,13 @@ class DatabaseHelper {
 
   Future<void> deleteCategory(int categoryId) async {
     try {
-      await http.delete(Uri.parse('$baseUrl/categories/$categoryId'));
+      await _supabase.from('categories').delete().eq('category_id', categoryId);
     } catch (e) {
       debugPrint('Lỗi deleteCategory: $e');
     }
   }
 
   Future<List<ThongBao>> getNotifications(int userId) async {
-    // Tạm thời trả về Mock cho UI Thông báo
     return [
       ThongBao(id: 1, tieuDe: 'Chào mừng!', noiDung: 'Chào mừng bạn đến với Cointap.', loai: 'SYSTEM', daDoc: false, ngayTao: DateTime.now())
     ];
@@ -158,31 +218,34 @@ class DatabaseHelper {
 
   Future<List<GiaoDich>> getTransactions(int userId, List<ViTien> wallets, List<DanhMuc> categories) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/transactions/$userId'));
-      if (response.statusCode == 200) {
-        final List data = jsonDecode(response.body);
-        return data.map((m) {
-          final wallet = wallets.firstWhere((w) => w.id == m['wallet_id'], orElse: () => wallets.first);
-          final cat = categories.firstWhere(
-            (c) => c.id.toString() == m['category_id']?.toString(),
-            orElse: () => categories.firstWhere(
-              (c) => c.loai == (m['type'] == 'EXPENSE' ? LoaiGiaoDich.chiTieu : LoaiGiaoDich.thuNhap),
-              orElse: () => categories.first,
-            ),
-          );
-          
-          return GiaoDich(
-            id: m['id'],
-            tieuDe: m['note'] ?? 'Giao dịch',
-            soTien: double.tryParse(m['amount']?.toString() ?? '0') ?? 0.0,
-            loai: m['type'] == 'EXPENSE' ? LoaiGiaoDich.chiTieu : LoaiGiaoDich.thuNhap,
-            danhMuc: cat,
-            viTien: wallet,
-            ngay: DateTime.tryParse(m['date']) ?? DateTime.now(),
-            ghiChu: m['note'],
-          );
-        }).toList();
-      }
+      final response = await _supabase
+          .from('transactions')
+          .select()
+          .eq('user_id', userId)
+          .order('transaction_date', ascending: false)
+          .order('transaction_id', ascending: false);
+
+      return (response as List).map((m) {
+        final wallet = wallets.firstWhere((w) => w.id == m['wallet_id'], orElse: () => wallets.first);
+        final cat = categories.firstWhere(
+          (c) => c.id == m['category_id'],
+          orElse: () => categories.firstWhere(
+            (c) => c.loai == (m['type'] == 'EXPENSE' ? LoaiGiaoDich.chiTieu : LoaiGiaoDich.thuNhap),
+            orElse: () => categories.first,
+          ),
+        );
+        
+        return GiaoDich(
+          id: m['transaction_id'],
+          tieuDe: m['note'] ?? 'Giao dịch',
+          soTien: double.tryParse(m['amount']?.toString() ?? '0') ?? 0.0,
+          loai: m['type'] == 'EXPENSE' ? LoaiGiaoDich.chiTieu : LoaiGiaoDich.thuNhap,
+          danhMuc: cat,
+          viTien: wallet,
+          ngay: m['transaction_date'] != null ? DateTime.parse(m['transaction_date']) : DateTime.now(),
+          ghiChu: m['note'],
+        );
+      }).toList();
     } catch (e) {
       debugPrint('Lỗi getTransactions: $e');
     }
@@ -190,62 +253,164 @@ class DatabaseHelper {
   }
 
   Future<NganSach> getBudget(int userId) async {
-    return NganSach(id: 1, hanMuc: 5000000, daChi: 0, ngayBatDau: DateTime.now(), ngayKetThuc: DateTime.now());
+    try {
+      final response = await _supabase
+          .from('budgets')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(1);
+          
+      if (response.isNotEmpty) {
+        final m = response.first;
+        return NganSach(
+          id: m['budget_id'],
+          hanMuc: double.tryParse(m['amount']?.toString() ?? '0') ?? 0.0,
+          daChi: 0, // daChi will be calculated in main.dart
+          ngayBatDau: m['start_date'] != null ? DateTime.parse(m['start_date']) : DateTime.now(),
+          ngayKetThuc: m['end_date'] != null ? DateTime.parse(m['end_date']) : DateTime.now().add(const Duration(days: 30)),
+        );
+      }
+    } catch (e) {
+      debugPrint('Lỗi getBudget: $e');
+    }
+    
+    // Default fallback
+    final now = DateTime.now();
+    return NganSach(id: 0, hanMuc: 5000000, daChi: 0, ngayBatDau: DateTime(now.year, now.month, 1), ngayKetThuc: DateTime(now.year, now.month + 1, 0));
+  }
+
+  Future<void> updateBudget(int userId, double amount) async {
+    try {
+      final response = await _supabase
+          .from('budgets')
+          .select('budget_id')
+          .eq('user_id', userId)
+          .limit(1);
+          
+      if (response.isNotEmpty) {
+        // Update existing
+        await _supabase.from('budgets').update({
+          'amount': amount,
+        }).eq('budget_id', response.first['budget_id']);
+      } else {
+        // Insert new
+        final now = DateTime.now();
+        final startOfMonth = DateTime(now.year, now.month, 1);
+        final endOfMonth = DateTime(now.year, now.month + 1, 0);
+        
+        await _supabase.from('budgets').insert({
+          'user_id': userId,
+          'amount': amount,
+          'start_date': startOfMonth.toIso8601String(),
+          'end_date': endOfMonth.toIso8601String(),
+        });
+      }
+    } catch (e) {
+      debugPrint('Lỗi updateBudget: $e');
+    }
   }
 
   Future<void> insertTransaction(GiaoDich tx, int userId) async {
-    await http.post(
-      Uri.parse('$baseUrl/transactions'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    try {
+      await _supabase.from('transactions').insert({
         'user_id': userId,
         'wallet_id': tx.viTien.id,
         'category_id': tx.danhMuc.id,
         'amount': tx.soTien,
         'type': tx.loai == LoaiGiaoDich.chiTieu ? 'EXPENSE' : 'INCOME',
-        'date': tx.ngay.toIso8601String(),
+        'transaction_date': tx.ngay.toIso8601String(),
         'note': tx.tieuDe,
-      }),
-    );
+      });
+    } catch (e) {
+      debugPrint('Lỗi insertTransaction: $e');
+    }
   }
 
   Future<void> updateTransactionCategory(int transactionId, int categoryId) async {
     try {
-      await http.put(
-        Uri.parse('$baseUrl/transactions/$transactionId'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'category_id': categoryId,
-        }),
-      );
+      await _supabase.from('transactions').update({
+        'category_id': categoryId,
+      }).eq('transaction_id', transactionId);
     } catch (e) {
       debugPrint('Lỗi updateTransactionCategory: $e');
     }
   }
 
   Future<void> insertWallet(ViTien wallet, int userId) async {
-    // Map Material icon code point back to a string identifier if needed,
-    // or just store string name. We will just hardcode 'account_balance_wallet'
-    // in backend string format or save icon code. Here we send icon name.
-    String iconName = 'account_balance_wallet';
-    if (wallet.icon == Icons.credit_card) iconName = 'credit_card';
-    if (wallet.icon == Icons.savings) iconName = 'savings';
-    
-    // Map color
-    String colorHex = '#${wallet.mauSac.value.toRadixString(16).substring(2).toUpperCase()}';
-    
-    await http.post(
-      Uri.parse('$baseUrl/wallets'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    try {
+      String iconName = 'account_balance_wallet';
+      if (wallet.icon == Icons.credit_card) iconName = 'credit_card';
+      if (wallet.icon == Icons.savings) iconName = 'savings';
+      
+      String colorHex = '#${wallet.mauSac.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+      
+      await _supabase.from('wallets').insert({
         'user_id': userId,
         'wallet_name': wallet.tenVi,
         'wallet_type': wallet.loaiVi,
         'balance': wallet.soDu,
         'icon': iconName,
         'color': colorHex,
-      }),
-    );
+      });
+    } catch (e) {
+      debugPrint('Lỗi insertWallet: $e');
+    }
+  }
+
+  Future<void> updateWallet(ViTien wallet) async {
+    try {
+      String iconName = 'account_balance_wallet';
+      if (wallet.icon == Icons.credit_card) iconName = 'credit_card';
+      if (wallet.icon == Icons.savings) iconName = 'savings';
+      
+      String colorHex = '#${wallet.mauSac.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+      
+      await _supabase.from('wallets').update({
+        'wallet_name': wallet.tenVi,
+        'wallet_type': wallet.loaiVi,
+        'balance': wallet.soDu,
+        'icon': iconName,
+        'color': colorHex,
+      }).eq('wallet_id', wallet.id);
+    } catch (e) {
+      debugPrint('Lỗi updateWallet: $e');
+    }
+  }
+
+  Future<void> deleteWallet(int walletId) async {
+    try {
+      await _supabase.from('wallets').update({'is_active': false}).eq('wallet_id', walletId);
+    } catch (e) {
+      debugPrint('Lỗi deleteWallet: $e');
+    }
+  }
+
+  // --- Helper Methods ---
+  IconData _getIconFromString(String? iconName) {
+    if (iconName == null) return Icons.category;
+    switch (iconName) {
+      case 'restaurant': return Icons.restaurant;
+      case 'shopping_cart': return Icons.shopping_cart;
+      case 'shopping_bag': return Icons.shopping_bag;
+      case 'payments': return Icons.payments;
+      case 'attach_money': return Icons.attach_money;
+      case 'directions_car': return Icons.directions_car;
+      case 'movie': return Icons.movie;
+      case 'more_time': return Icons.more_time;
+      case 'account_balance_wallet': return Icons.account_balance_wallet;
+      case 'credit_card': return Icons.credit_card;
+      case 'savings': return Icons.savings;
+      default: return Icons.category;
+    }
+  }
+
+  Color _getColorFromString(String? hexColor) {
+    if (hexColor == null || hexColor.isEmpty) return Colors.black;
+    hexColor = hexColor.replaceAll('#', '');
+    if (hexColor.length == 6) {
+      hexColor = 'FF$hexColor'; 
+    }
+    return Color(int.parse(hexColor, radix: 16));
   }
 }
-

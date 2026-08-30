@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../mo_hinh/du_lieu.dart';
@@ -98,7 +99,7 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
       if (!mounted) return;
       setState(() {
         _isManualTab = true; // Switch back to manual to show results
-        _amountController.text = '250000';
+        _amountController.text = '250,000';
         _noteController.text = 'Siêu thị WinMart';
         _danhMucDangChon = widget.danhSachDanhMuc.firstWhere(
           (c) => c.ten.contains('Tạp hóa') || c.ten.contains('Ăn uống'),
@@ -147,6 +148,7 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
                     child: TextField(
                       controller: _amountController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [CurrencyInputFormatter()],
                       textAlign: TextAlign.center,
                       style: GoogleFonts.manrope(
                         fontSize: 48,
@@ -573,6 +575,40 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
           ),
         ],
       ),
+    );
+  }
+}
+
+class CurrencyInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.text.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    String newText = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (newText.isEmpty) {
+       return newValue.copyWith(text: '');
+    }
+    
+    // Add commas
+    String formattedText = '';
+    int count = 0;
+    for (int i = newText.length - 1; i >= 0; i--) {
+      formattedText = newText[i] + formattedText;
+      count++;
+      if (count % 3 == 0 && i != 0) {
+        formattedText = ',' + formattedText;
+      }
+    }
+
+    int selectionIndexFromTheRight = newValue.text.length - newValue.selection.end;
+    int offset = formattedText.length - selectionIndexFromTheRight;
+    if (offset < 0) offset = 0;
+
+    return TextEditingValue(
+      text: formattedText,
+      selection: TextSelection.collapsed(offset: offset),
     );
   }
 }

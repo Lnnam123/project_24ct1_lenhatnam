@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/cupertino.dart';
@@ -8,21 +9,27 @@ import '../mo_hinh/du_lieu.dart';
 import 'dang_nhap.dart';
 import 'dang_nhap_nhanh.dart';
 import 'quan_ly_danh_muc.dart';
+import 'thong_tin_ca_nhan.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'doi_mat_khau.dart';
+import '../dich_vu/update_service.dart';
 
 class ManHinhCaiDat extends StatefulWidget {
   final NguoiDung nguoiDung;
-  final List<DanhMuc>? danhSachDanhMuc;
-  final Function(DanhMuc danhMucMoi)? onThemDanhMuc;
-  final Function(DanhMuc danhMucSua)? onCapNhatDanhMuc;
-  final Function(int danhMucId)? onXoaDanhMuc;
+  final List<DanhMuc> danhSachDanhMuc;
+  final Function(DanhMuc danhMucMoi) onThemDanhMuc;
+  final Function(DanhMuc danhMucSua) onCapNhatDanhMuc;
+  final Function(int danhMucId) onXoaDanhMuc;
+  final Function(NguoiDung)? onCapNhatNguoiDung;
 
   const ManHinhCaiDat({
     super.key,
     required this.nguoiDung,
-    this.danhSachDanhMuc,
-    this.onThemDanhMuc,
-    this.onCapNhatDanhMuc,
-    this.onXoaDanhMuc,
+    required this.danhSachDanhMuc,
+    required this.onThemDanhMuc,
+    required this.onCapNhatDanhMuc,
+    required this.onXoaDanhMuc,
+    this.onCapNhatNguoiDung,
   });
 
   @override
@@ -32,13 +39,19 @@ class ManHinhCaiDat extends StatefulWidget {
 class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
   bool _batKhieuUngDung = true;
 
+  ImageProvider _getAvatarProvider() {
+    final path = widget.nguoiDung.avatarUrl;
+    if (path.isEmpty) return const AssetImage('assets/images/default_avatar.png');
+    if (path.startsWith('http')) return NetworkImage(path);
+    return FileImage(File(path));
+  }
+
   @override
   Widget build(BuildContext context) {
-    const colorSurfaceAlt = Color(0xFFF8FAFC);
     const colorErrorContainer = Color(0xFFFFDAD6);
     
     return Scaffold(
-      backgroundColor: colorSurfaceAlt,
+      backgroundColor: MauSac.background,
       appBar: AppBar(
         backgroundColor: MauSac.surface,
         elevation: 0,
@@ -66,10 +79,13 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
               ),
               child: Row(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 32,
                     backgroundColor: MauSac.surfaceContainerHigh,
-                    child: Icon(Icons.person, color: MauSac.primary, size: 36),
+                    backgroundImage: widget.nguoiDung.avatarUrl.isNotEmpty ? _getAvatarProvider() : null,
+                    child: widget.nguoiDung.avatarUrl.isEmpty 
+                        ? const Icon(Icons.person, color: MauSac.primary, size: 36)
+                        : null,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -92,46 +108,7 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
                             color: MauSac.onSurfaceVariant,
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFDBE1FF), // primary-fixed
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.stars, size: 14, color: MauSac.primary),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Premium',
-                                style: GoogleFonts.manrope(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: MauSac.primary,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ],
-                    ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.transparent,
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.edit, color: MauSac.primary),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Chức năng chỉnh sửa thông tin cá nhân')),
-                        );
-                      },
-                      splashRadius: 24,
                     ),
                   ),
                 ],
@@ -145,26 +122,49 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
               _buildSettingsItem(
                 icon: Icons.person,
                 title: 'Thông tin cá nhân',
-                onTap: () {},
+                onTap: () {
+                  if (widget.onCapNhatNguoiDung != null) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ManHinhThongTinCaNhan(
+                          nguoiDung: widget.nguoiDung,
+                          onCapNhatNguoiDung: widget.onCapNhatNguoiDung!,
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+              _buildSettingsItem(
+                icon: Icons.lock_outline,
+                title: 'Đổi mật khẩu',
+                onTap: () {
+                  if (widget.onCapNhatNguoiDung != null) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ManHinhDoiMatKhau(
+                          nguoiDung: widget.nguoiDung,
+                          onCapNhatNguoiDung: widget.onCapNhatNguoiDung!,
+                        ),
+                      ),
+                    );
+                  }
+                },
               ),
               _buildSettingsItem(
                 icon: Icons.category,
                 title: 'Quản lý danh mục thu/chi',
                 onTap: () {
-                  if (widget.onThemDanhMuc != null &&
-                      widget.onCapNhatDanhMuc != null &&
-                      widget.onXoaDanhMuc != null) {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ManHinhQuanLyDanhMuc(
-                          danhSachDanhMuc: widget.danhSachDanhMuc ?? [],
-                          onThemDanhMuc: widget.onThemDanhMuc!,
-                          onCapNhatDanhMuc: widget.onCapNhatDanhMuc!,
-                          onXoaDanhMuc: widget.onXoaDanhMuc!,
-                        ),
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ManHinhQuanLyDanhMuc(
+                        danhSachDanhMuc: widget.danhSachDanhMuc,
+                        onThemDanhMuc: widget.onThemDanhMuc,
+                        onCapNhatDanhMuc: widget.onCapNhatDanhMuc,
+                        onXoaDanhMuc: widget.onXoaDanhMuc,
                       ),
-                    );
-                  }
+                    ),
+                  );
                 },
               ),
               _buildSettingsItem(
@@ -181,7 +181,9 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
               _buildSettingsItem(
                 icon: Icons.notifications,
                 title: 'Thông báo',
-                onTap: () {},
+                onTap: () async {
+                  await openAppSettings();
+                },
               ),
               _buildSettingsItem(
                 icon: Icons.language,
@@ -228,6 +230,13 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
                 icon: Icons.description,
                 title: 'Điều khoản sử dụng',
                 onTap: () {},
+              ),
+              _buildSettingsItem(
+                icon: Icons.system_update,
+                title: 'Kiểm tra cập nhật',
+                onTap: () {
+                  UpdateService.kiemTraCapNhat(context, hienThongBaoKhongCo: true);
+                },
               ),
               _buildSettingsItem(
                 icon: Icons.info,

@@ -8,12 +8,16 @@ class ManHinhViTien extends StatefulWidget {
   final List<ViTien> danhSachVi;
   final List<GiaoDich> danhSachGiaoDich;
   final VoidCallback moThemViTien;
+  final Function(ViTien) moQuanLyViTien;
+  final VoidCallback onTapThongBao;
 
   const ManHinhViTien({
     super.key,
     required this.danhSachVi,
     required this.danhSachGiaoDich,
     required this.moThemViTien,
+    required this.moQuanLyViTien,
+    required this.onTapThongBao,
   });
 
   @override
@@ -39,8 +43,43 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
     return Scaffold(
       backgroundColor: MauSac.background,
       appBar: AppBar(
-        title: Text('Tài khoản & Ví tiền', style: GoogleFonts.manrope()),
+        backgroundColor: MauSac.surface,
         elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Tài khoản & Ví tiền',
+          style: GoogleFonts.manrope(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: MauSac.onSurface,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Stack(
+              children: [
+                const Icon(
+                  Icons.notifications_outlined,
+                  color: MauSac.onSurface,
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: MauSac.error,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            onPressed: widget.onTapThongBao,
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -71,70 +110,73 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
                 separatorBuilder: (ctx, i) => const SizedBox(width: 12),
                 itemBuilder: (ctx, index) {
                   final vi = widget.danhSachVi[index];
-                  return Container(
-                    width: 200,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: MauSac.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: MauSac.borderSubtle),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.02),
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundColor: vi.mauSac.withValues(alpha: 0.15),
-                              child: Icon(vi.icon, color: vi.mauSac, size: 18),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: MauSac.surfaceContainerLow,
-                                borderRadius: BorderRadius.circular(8),
+                  return GestureDetector(
+                    onTap: () => widget.moQuanLyViTien(vi),
+                    child: Container(
+                      width: 200,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: MauSac.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: MauSac.borderSubtle),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundColor: vi.mauSac.withValues(alpha: 0.15),
+                                child: Icon(vi.icon, color: vi.mauSac, size: 18),
                               ),
-                              child: Text(
-                                vi.loaiVi,
-                                style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.bold),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: MauSac.surfaceContainerLow,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  vi.loaiVi,
+                                  style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              vi.tenVi,
-                              style: GoogleFonts.manrope(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: MauSac.onSurfaceVariant,
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                vi.tenVi,
+                                style: GoogleFonts.manrope(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: MauSac.onSurfaceVariant,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _dinhDangTien(vi.soDu),
-                              style: GoogleFonts.manrope(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                                color: MauSac.onSurface,
+                              const SizedBox(height: 2),
+                              Text(
+                                _dinhDangTien(vi.soDu),
+                                style: GoogleFonts.manrope(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: MauSac.onSurface,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },

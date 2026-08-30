@@ -11,14 +11,21 @@ import 'man_hinh/thong_bao.dart';
 import 'chu_de/mau_sac.dart';
 import 'thanh_phan/modal_them_giao_dich.dart';
 import 'thanh_phan/skeleton_loading.dart';
-import 'thanh_phan/modal_them_vi_tien.dart';
+import 'thanh_phan/modal_quan_ly_vi_tien.dart';
 import 'du_lieu/database_helper.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'man_hinh/dang_nhap_nhanh.dart';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  await Supabase.initialize(
+    url: 'https://yribnkvfvpysievnhmwr.supabase.co',
+    anonKey: 'sb_publishable_DOQ8uECFBcqcIG85PTBMWg_EvE19RAl',
+  );
   
   final prefs = await SharedPreferences.getInstance();
   final savedUserId = prefs.getInt('saved_user_id');
@@ -63,51 +70,74 @@ class ManHinhChinh extends StatefulWidget {
 
 class _ManHinhChinhState extends State<ManHinhChinh> {
   int _chiMucHienTai = 0;
+  bool _truotSangTrai = true;
 
   List<ViTien> _danhSachVi = [];
   List<DanhMuc> _danhSachDanhMuc = [];
   List<GiaoDich> _danhSachGiaoDich = [];
   NganSach? _nganSach;
   bool _isLoading = true;
-
-  late PageController _pageController;
+  NguoiDung? _nguoiDungHienTai;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: _chiMucHienTai);
     _taiDuLieuTuDatabase();
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
   }
 
   Future<void> _taiDuLieuTuDatabase() async {
     setState(() => _isLoading = true);
 
     final db = DatabaseHelper.instance;
-    final wallets = await db.getWallets(widget.nguoiDung.id);
-    final categories = await db.getCategories(widget.nguoiDung.id);
-    final transactions = await db.getTransactions(widget.nguoiDung.id, wallets, categories);
-    final budget = await db.getBudget(widget.nguoiDung.id);
+    // Tối ưu hóa: Tải dữ liệu song song
+    final results = await Future.wait([
+      db.getWallets(widget.nguoiDung.id),
+      db.getCategories(widget.nguoiDung.id),
+      db.getBudget(widget.nguoiDung.id),
+    ]);
 
-    setState(() {
-      _danhSachVi = wallets;
-      _danhSachDanhMuc = categories;
-      _danhSachGiaoDich = transactions;
-      _nganSach = budget;
-      _isLoading = false;
-    });
+    final wallets = results[0] as List<ViTien>;
+    final categories = results[1] as List<DanhMuc>;
+    final budget = results[2] as NganSach;
+
+    final transactions = await db.getTransactions(widget.nguoiDung.id, wallets, categories);
+
+    // Calculate daChi (total spent this month)
+    final now = DateTime.now();
+    double totalSpent = 0;
+    for (var tx in transactions) {
+      if (tx.loai == LoaiGiaoDich.chiTieu && tx.ngay.year == now.year && tx.ngay.month == now.month) {
+        totalSpent += tx.soTien;
+      }
+    }
+    budget.daChi = totalSpent;
+
+    if (mounted) {
+      setState(() {
+        _danhSachVi = wallets;
+        _danhSachDanhMuc = categories;
+        _danhSachGiaoDich = transactions;
+        _nganSach = budget;
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _capNhatNganSach(double hanMucMoi) async {
+    await DatabaseHelper.instance.updateBudget(widget.nguoiDung.id, hanMucMoi);
+    await _taiDuLieuTuDatabase();
+    
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã cập nhật hạn mức ngân sách!', style: GoogleFonts.manrope()),
+        backgroundColor: MauSac.success,
+      ),
+    );
   }
 
   void _themGiaoDich(GiaoDich giaoDich) async {
-    // Luu vao SQLite
     await DatabaseHelper.instance.insertTransaction(giaoDich, widget.nguoiDung.id);
-    
-    // Refresh the UI by fetching latest data from DB
     await _taiDuLieuTuDatabase();
 
     if (!mounted) return;
@@ -138,189 +168,275 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
     );
   }
 
+  void _doiDanhMucGiaoDich(int transactionId, DanhMuc danhMucMoi) async {
+    await DatabaseHelper.instance.updateTransactionCategory(transactionId, danhMucMoi.id);
+    await _taiDuLieuTuDatabase();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã đổi danh mục giao dịch sang "${danhMucMoi.ten}"!', style: GoogleFonts.manrope()),
+        backgroundColor: MauSac.success,
+      ),
+    );
+  }
+
+  void _themViTien(ViTien viMoi) async {
+    await DatabaseHelper.instance.insertWallet(viMoi, widget.nguoiDung.id);
+    await _taiDuLieuTuDatabase();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã thêm ví tiền thành công!', style: GoogleFonts.manrope()),
+        backgroundColor: MauSac.success,
+      ),
+    );
+  }
+
+  void _capNhatViTien(ViTien viSua) async {
+    await DatabaseHelper.instance.updateWallet(viSua);
+    await _taiDuLieuTuDatabase();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã cập nhật ví tiền thành công!', style: GoogleFonts.manrope()),
+        backgroundColor: MauSac.success,
+      ),
+    );
+  }
+
+  void _xoaViTien(int id) async {
+    await DatabaseHelper.instance.deleteWallet(id);
+    await _taiDuLieuTuDatabase();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã xóa ví tiền thành công!', style: GoogleFonts.manrope()),
+        backgroundColor: MauSac.success,
+      ),
+    );
+  }
+
+  void _moModalQuanLyViTien([ViTien? viTienCu]) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (ctx) => ModalQuanLyViTien(
+          viTienCu: viTienCu,
+          onThemViTien: _themViTien,
+          onCapNhatViTien: _capNhatViTien,
+          onXoaViTien: _xoaViTien,
+        ),
+      ),
+    );
+  }
+
+  void _themDanhMuc(DanhMuc danhMucMoi) async {
+    await DatabaseHelper.instance.insertCategory(danhMucMoi, widget.nguoiDung.id);
+    await _taiDuLieuTuDatabase();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã thêm danh mục thành công!', style: GoogleFonts.manrope()),
+        backgroundColor: MauSac.success,
+      ),
+    );
+  }
+
+  void _capNhatDanhMuc(DanhMuc danhMucSua) async {
+    await DatabaseHelper.instance.updateCategory(danhMucSua);
+    await _taiDuLieuTuDatabase();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã cập nhật danh mục thành công!', style: GoogleFonts.manrope()),
+        backgroundColor: MauSac.success,
+      ),
+    );
+  }
+
+  void _xoaDanhMuc(int danhMucId) async {
+    await DatabaseHelper.instance.deleteCategory(danhMucId);
+    await _taiDuLieuTuDatabase();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã xóa danh mục thành công!', style: GoogleFonts.manrope()),
+        backgroundColor: MauSac.success,
+      ),
+    );
+  }
+  void _capNhatNguoiDung(NguoiDung userMoi) async {
+    await DatabaseHelper.instance.updateUser(userMoi);
+    if (!mounted) return;
+    setState(() {
+      _nguoiDungHienTai = userMoi;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const TrangTongQuanSkeleton();
-    }
-
-    void _doiDanhMucGiaoDich(int transactionId, DanhMuc danhMucMoi) async {
-      await DatabaseHelper.instance.updateTransactionCategory(transactionId, danhMucMoi.id);
-      await _taiDuLieuTuDatabase();
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Đã đổi danh mục giao dịch sang "${danhMucMoi.ten}"!', style: GoogleFonts.manrope()),
-          backgroundColor: MauSac.success,
-        ),
+      return const Scaffold(
+        body: TrangTongQuanSkeleton(),
       );
     }
 
-    // Override the app bar action in ManHinhTongQuan for Notifications
-    final tongQuanScreen = ManHinhTongQuan(
-      nguoiDung: widget.nguoiDung,
-      danhSachGiaoDich: _danhSachGiaoDich,
-      danhSachVi: _danhSachVi,
-      danhSachDanhMuc: _danhSachDanhMuc,
-      nganSach: _nganSach ?? NganSach(id: 0, hanMuc: 0, daChi: 0, ngayBatDau: DateTime.now(), ngayKetThuc: DateTime.now()),
-      moThemGiaoDich: _moModalThemGiaoDich,
-      xemTatCaGiaoDich: () {
-        _pageController.animateToPage(
-          2, // Switch to Wallets / History tab
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      },
-      moThongBao: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => ManHinhThongBao(userId: widget.nguoiDung.id)),
-        );
-      },
-      onDoiDanhMucGiaoDich: _doiDanhMucGiaoDich,
-      onRefresh: _taiDuLieuTuDatabase,
-    );
-
-    void _themViTien(ViTien viMoi) async {
-      await DatabaseHelper.instance.insertWallet(viMoi, widget.nguoiDung.id);
-      await _taiDuLieuTuDatabase();
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Đã thêm ví tiền thành công!', style: GoogleFonts.manrope()),
-          backgroundColor: MauSac.success,
-        ),
-      );
-    }
-
-    void _moModalThemViTien() {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (ctx) => ModalThemViTien(
-          onThemViTien: _themViTien,
-        ),
-      );
-    }
-
-    void _themDanhMuc(DanhMuc danhMucMoi) async {
-      await DatabaseHelper.instance.insertCategory(danhMucMoi, widget.nguoiDung.id);
-      await _taiDuLieuTuDatabase();
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Đã thêm danh mục thành công!', style: GoogleFonts.manrope()),
-          backgroundColor: MauSac.success,
-        ),
-      );
-    }
-
-    void _capNhatDanhMuc(DanhMuc danhMucSua) async {
-      await DatabaseHelper.instance.updateCategory(danhMucSua);
-      await _taiDuLieuTuDatabase();
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Đã cập nhật danh mục thành công!', style: GoogleFonts.manrope()),
-          backgroundColor: MauSac.success,
-        ),
-      );
-    }
-
-    void _xoaDanhMuc(int danhMucId) async {
-      await DatabaseHelper.instance.deleteCategory(danhMucId);
-      await _taiDuLieuTuDatabase();
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Đã xóa danh mục thành công!', style: GoogleFonts.manrope()),
-          backgroundColor: MauSac.success,
-        ),
-      );
-    }
+    final nguoiDung = _nguoiDungHienTai ?? widget.nguoiDung;
 
     final cacManHinh = [
-      tongQuanScreen,
-      ManHinhPhanTich(danhSachGiaoDich: _danhSachGiaoDich),
-      ManHinhViTien(danhSachVi: _danhSachVi, danhSachGiaoDich: _danhSachGiaoDich, moThemViTien: _moModalThemViTien),
+      ManHinhTongQuan(
+        nguoiDung: nguoiDung,
+        danhSachGiaoDich: _danhSachGiaoDich,
+        danhSachVi: _danhSachVi,
+        danhSachDanhMuc: _danhSachDanhMuc,
+        nganSach: _nganSach ?? NganSach(id: 0, hanMuc: 0, daChi: 0, ngayBatDau: DateTime.now(), ngayKetThuc: DateTime.now()),
+        moThemGiaoDich: _moModalThemGiaoDich,
+        xemTatCaGiaoDich: () {
+          setState(() {
+            _chiMucHienTai = 2; // Chuyển sang tab Ví
+          });
+        },
+        moThongBao: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => ManHinhThongBao(userId: nguoiDung.id)),
+          );
+        },
+        onDoiDanhMucGiaoDich: _doiDanhMucGiaoDich,
+        onRefresh: _taiDuLieuTuDatabase,
+        onCapNhatNganSach: _capNhatNganSach,
+      ),
+      ManHinhPhanTich(
+        danhSachGiaoDich: _danhSachGiaoDich,
+        onTapThongBao: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => ManHinhThongBao(userId: nguoiDung.id)),
+          );
+        },
+      ),
+      ManHinhViTien(
+        danhSachVi: _danhSachVi, 
+        danhSachGiaoDich: _danhSachGiaoDich, 
+        moThemViTien: _moModalQuanLyViTien,
+        moQuanLyViTien: _moModalQuanLyViTien,
+        onTapThongBao: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => ManHinhThongBao(userId: nguoiDung.id)),
+          );
+        },
+      ),
       ManHinhCaiDat(
-        nguoiDung: widget.nguoiDung,
+        nguoiDung: nguoiDung,
         danhSachDanhMuc: _danhSachDanhMuc,
         onThemDanhMuc: _themDanhMuc,
         onCapNhatDanhMuc: _capNhatDanhMuc,
         onXoaDanhMuc: _xoaDanhMuc,
+        onCapNhatNguoiDung: _capNhatNguoiDung,
       ),
     ];
 
     return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        physics: const BouncingScrollPhysics(),
-        onPageChanged: (index) {
-          setState(() {
-            _chiMucHienTai = index;
-          });
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          final isIncoming = (child.key as ValueKey<int>).value == _chiMucHienTai;
+          
+          final slideDirection = _truotSangTrai ? 1.0 : -1.0;
+          final offsetBegin = isIncoming 
+              ? Offset(slideDirection, 0.0) 
+              : Offset(-slideDirection, 0.0);
+
+          final slideAnimation = Tween<Offset>(
+            begin: offsetBegin,
+            end: Offset.zero,
+          ).animate(animation);
+          
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: slideAnimation,
+              child: child,
+            ),
+          );
         },
-        children: cacManHinh,
+        child: Container(
+          key: ValueKey<int>(_chiMucHienTai),
+          child: cacManHinh[_chiMucHienTai],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: MauSac.primary,
         foregroundColor: Colors.white,
         elevation: 6,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: const CircleBorder(),
         onPressed: _moModalThemGiaoDich,
         child: const Icon(Icons.add, size: 28),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: MauSac.surface,
-          border: Border(top: BorderSide(color: MauSac.borderSubtle, width: 1)),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        color: MauSac.surface,
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8.0,
+        elevation: 20, // Tăng bóng đổ để dễ nhìn như có viền
+        shadowColor: Colors.black.withValues(alpha: 0.5),
+        clipBehavior: Clip.antiAlias,
+        child: SizedBox(
+          height: 60,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(0, Icons.grid_view_outlined, Icons.grid_view),
+              _buildNavItem(1, Icons.bar_chart_outlined, Icons.bar_chart),
+              const SizedBox(width: 48), // Khoảng trống cho FAB
+              _buildNavItem(2, Icons.account_balance_wallet_outlined, Icons.account_balance_wallet),
+              _buildNavItem(3, Icons.settings_outlined, Icons.settings),
+            ],
+          ),
         ),
-        child: BottomNavigationBar(
-          currentIndex: _chiMucHienTai,
-          onTap: (index) {
-            _pageController.animateToPage(
-              index,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-            );
-          },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: MauSac.surface,
-          selectedItemColor: MauSac.primary,
-          unselectedItemColor: MauSac.onSurfaceVariant,
-          selectedLabelStyle: GoogleFonts.manrope(fontWeight: FontWeight.bold, fontSize: 12),
-          unselectedLabelStyle: GoogleFonts.manrope(fontWeight: FontWeight.normal, fontSize: 12),
-          elevation: 0,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.grid_view_outlined),
-              activeIcon: Icon(Icons.grid_view),
-              label: 'Tổng quan',
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData outlineIcon, IconData solidIcon) {
+    final isSelected = _chiMucHienTai == index;
+    return GestureDetector(
+      onTap: () {
+        if (_chiMucHienTai != index) {
+          setState(() {
+            _truotSangTrai = index > _chiMucHienTai;
+            _chiMucHienTai = index;
+          });
+        }
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            isSelected ? solidIcon : outlineIcon,
+            color: isSelected ? MauSac.primary : MauSac.onSurfaceVariant,
+            size: 26,
+          ),
+          if (isSelected) ...[
+            const SizedBox(height: 4),
+            Container(
+              width: 4,
+              height: 4,
+              decoration: const BoxDecoration(
+                color: MauSac.primary,
+                shape: BoxShape.circle,
+              ),
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart_outlined),
-              activeIcon: Icon(Icons.bar_chart),
-              label: 'Phân tích',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.account_balance_wallet_outlined),
-              activeIcon: Icon(Icons.account_balance_wallet),
-              label: 'Ví',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings),
-              label: 'Cài đặt',
-            ),
-          ],
-        ),
+          ]
+        ],
       ),
     );
   }

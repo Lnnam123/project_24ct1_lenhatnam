@@ -1,0 +1,190 @@
+<!DOCTYPE html><html lang="vi"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Xác thực mã OTP - CoinTap</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "success": "#10B981",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "surface-container-highest": "#dae2fd",
+                        "primary-container": "#2563eb",
+                        "secondary": "#712ae2",
+                        "on-tertiary-fixed-variant": "#7d2d00",
+                        "outline": "#737686",
+                        "surface-tint": "#0053db",
+                        "surface-bright": "#faf8ff",
+                        "error": "#EF4444",
+                        "surface-variant": "#dae2fd",
+                        "surface-alt": "#F8FAFC",
+                        "on-secondary-container": "#fffbff",
+                        "on-surface": "#131b2e",
+                        "secondary-fixed": "#eaddff",
+                        "surface-container-low": "#f2f3ff",
+                        "on-secondary-fixed": "#25005a",
+                        "on-secondary-fixed-variant": "#5a00c6",
+                        "outline-variant": "#c3c6d7",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#283044",
+                        "surface": "#faf8ff",
+                        "tertiary": "#943700",
+                        "primary-fixed": "#dbe1ff",
+                        "secondary-fixed-dim": "#d2bbff",
+                        "surface-dim": "#d2d9f4",
+                        "tertiary-fixed-dim": "#ffb596",
+                        "border-subtle": "#E2E8F0",
+                        "secondary-container": "#8a4cfc",
+                        "tertiary-container": "#bc4800",
+                        "surface-container": "#eaedff",
+                        "surface-container-high": "#e2e7ff",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "on-surface-variant": "#434655",
+                        "on-primary-container": "#eeefff",
+                        "tertiary-fixed": "#ffdbcd",
+                        "on-primary-fixed": "#00174b",
+                        "on-background": "#131b2e",
+                        "on-secondary": "#ffffff",
+                        "warning": "#F59E0B",
+                        "on-tertiary-container": "#ffede6",
+                        "on-tertiary-fixed": "#360f00",
+                        "background": "#faf8ff",
+                        "inverse-on-surface": "#eef0ff",
+                        "primary": "#004ac6",
+                        "on-tertiary": "#ffffff",
+                        "inverse-primary": "#b4c5ff",
+                        "error-container": "#ffdad6",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "20px",
+                        "stack-md": "12px",
+                        "gutter": "16px",
+                        "section-padding": "32px",
+                        "stack-sm": "4px",
+                        "base": "8px",
+                        "stack-lg": "24px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "display-lg": ["Manrope"],
+                        "display-lg-mobile": ["Manrope"],
+                        "numeric-data": ["Manrope"],
+                        "body-sm": ["Manrope"],
+                        "headline-md": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "display-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "numeric-data": ["18px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* OTP Input styling to hide arrows */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col items-center justify-center">
+<!-- Main Container -->
+<main class="w-full max-w-md px-margin-mobile flex flex-col items-start h-full pt-[80px]">
+<!-- Back Button (Transactional/Linear flow, no global nav) -->
+<div class="w-full flex justify-start mb-stack-lg">
+<button class="p-base -ml-base rounded-full hover:bg-surface-container-low transition-colors duration-200 flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+</div>
+<!-- Header -->
+<div class="mb-8">
+<h1 class="font-display-lg-mobile text-display-lg-mobile md:font-display-lg md:text-display-lg text-on-surface mb-2">Xác thực OTP</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                Nhập mã 6 chữ số đã được gửi đến số điện thoại của bạn.
+</p>
+</div>
+<!-- OTP Input Form -->
+<form class="w-full flex flex-col gap-5 mt-4">
+<!-- OTP Grid -->
+<div class="flex gap-gutter w-full justify-between" id="otp-container">
+<input autofocus="" class="w-12 h-14 md:w-14 md:h-16 text-center font-numeric-data text-display-lg-mobile bg-surface-alt border border-border-subtle rounded-lg focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim outline-none transition-all text-on-surface shadow-sm" maxlength="1" pattern="\d*" type="number">
+<input class="w-12 h-14 md:w-14 md:h-16 text-center font-numeric-data text-display-lg-mobile bg-surface-alt border border-border-subtle rounded-lg focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim outline-none transition-all text-on-surface shadow-sm" maxlength="1" pattern="\d*" type="number">
+<input class="w-12 h-14 md:w-14 md:h-16 text-center font-numeric-data text-display-lg-mobile bg-surface-alt border border-border-subtle rounded-lg focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim outline-none transition-all text-on-surface shadow-sm" maxlength="1" pattern="\d*" type="number">
+<input class="w-12 h-14 md:w-14 md:h-16 text-center font-numeric-data text-display-lg-mobile bg-surface-alt border border-border-subtle rounded-lg focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim outline-none transition-all text-on-surface shadow-sm" maxlength="1" pattern="\d*" type="number">
+<input class="w-12 h-14 md:w-14 md:h-16 text-center font-numeric-data text-display-lg-mobile bg-surface-alt border border-border-subtle rounded-lg focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim outline-none transition-all text-on-surface shadow-sm" maxlength="1" pattern="\d*" type="number">
+<input class="w-12 h-14 md:w-14 md:h-16 text-center font-numeric-data text-display-lg-mobile bg-surface-alt border border-border-subtle rounded-lg focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim outline-none transition-all text-on-surface shadow-sm" maxlength="1" pattern="\d*" type="number">
+</div>
+<!-- Submit Button -->
+<div class="mt-4 flex flex-col gap-4">
+<button class="w-full bg-primary text-on-primary py-4 rounded-xl font-headline-md text-headline-md shadow-[0_4px_12px_rgba(0,74,198,0.2)] hover:bg-surface-tint transition-colors flex items-center justify-center gap-2" type="submit">
+                Xác nhận
+            </button>
+<!-- Resend Timer -->
+<div class="w-full text-center font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Bạn chưa nhận được mã? </span>
+<span class="text-primary font-medium cursor-pointer hover:underline" id="timer">Gửi lại (00:59)</span>
+</div>
+</div>
+</form>
+</main>
+<script>
+        // Simple logic for OTP inputs auto-focusing
+        const inputs = document.querySelectorAll('#otp-container input');
+        
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length > 1) {
+                    e.target.value = e.target.value.slice(0, 1);
+                }
+                if (e.target.value.length === 1) {
+                    if (index < inputs.length - 1) {
+                        inputs[index + 1].focus();
+                    }
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value) {
+                    if (index > 0) {
+                        inputs[index - 1].focus();
+                    }
+                }
+            });
+        });
+    </script>
+
+
+</body></html>

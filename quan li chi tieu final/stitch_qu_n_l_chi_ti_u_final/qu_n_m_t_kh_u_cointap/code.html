@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Quên mật khẩu</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config from Design System -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-lowest": "#ffffff",
+                    "success": "#10B981",
+                    "primary-fixed-dim": "#b4c5ff",
+                    "surface-container-highest": "#dae2fd",
+                    "primary-container": "#2563eb",
+                    "secondary": "#712ae2",
+                    "on-tertiary-fixed-variant": "#7d2d00",
+                    "outline": "#737686",
+                    "surface-tint": "#0053db",
+                    "surface-bright": "#faf8ff",
+                    "error": "#EF4444",
+                    "surface-variant": "#dae2fd",
+                    "surface-alt": "#F8FAFC",
+                    "on-secondary-container": "#fffbff",
+                    "on-surface": "#131b2e",
+                    "secondary-fixed": "#eaddff",
+                    "surface-container-low": "#f2f3ff",
+                    "on-secondary-fixed": "#25005a",
+                    "on-secondary-fixed-variant": "#5a00c6",
+                    "outline-variant": "#c3c6d7",
+                    "on-error-container": "#93000a",
+                    "inverse-surface": "#283044",
+                    "surface": "#faf8ff",
+                    "tertiary": "#943700",
+                    "primary-fixed": "#dbe1ff",
+                    "secondary-fixed-dim": "#d2bbff",
+                    "surface-dim": "#d2d9f4",
+                    "tertiary-fixed-dim": "#ffb596",
+                    "border-subtle": "#E2E8F0",
+                    "secondary-container": "#8a4cfc",
+                    "tertiary-container": "#bc4800",
+                    "surface-container": "#eaedff",
+                    "surface-container-high": "#e2e7ff",
+                    "on-primary-fixed-variant": "#003ea8",
+                    "on-surface-variant": "#434655",
+                    "on-primary-container": "#eeefff",
+                    "tertiary-fixed": "#ffdbcd",
+                    "on-primary-fixed": "#00174b",
+                    "on-background": "#131b2e",
+                    "on-secondary": "#ffffff",
+                    "warning": "#F59E0B",
+                    "on-tertiary-container": "#ffede6",
+                    "on-tertiary-fixed": "#360f00",
+                    "background": "#faf8ff",
+                    "inverse-on-surface": "#eef0ff",
+                    "primary": "#004ac6",
+                    "on-tertiary": "#ffffff",
+                    "inverse-primary": "#b4c5ff",
+                    "error-container": "#ffdad6",
+                    "on-primary": "#ffffff",
+                    "on-error": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "20px",
+                    "stack-md": "12px",
+                    "gutter": "16px",
+                    "section-padding": "32px",
+                    "stack-sm": "4px",
+                    "base": "8px",
+                    "stack-lg": "24px"
+            },
+            "fontFamily": {
+                    "label-caps": [
+                            "Inter"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "display-lg": [
+                            "Inter"
+                    ],
+                    "display-lg-mobile": [
+                            "Inter"
+                    ],
+                    "numeric-data": [
+                            "Inter"
+                    ],
+                    "body-sm": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "label-caps": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-lg": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "display-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "display-lg-mobile": [
+                            "28px",
+                            {
+                                    "lineHeight": "36px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "numeric-data": [
+                            "18px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-sm": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "600"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        /* Overriding Inter with Manrope globally as requested, while keeping the structure intact */
+        body { font-family: 'Manrope', sans-serif !important; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col antialiased">
+<!-- Header / Back Navigation -->
+<header class="w-full px-margin-mobile py-4 flex items-center justify-between">
+<button aria-label="Quay lại" class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<!-- Empty div to balance flex space-between if needed, or omit -->
+<div class="w-10"></div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col items-center justify-center px-margin-mobile pb-section-padding w-full max-w-md mx-auto">
+<!-- Illustration -->
+<div class="w-full max-w-[240px] aspect-square mb-stack-lg rounded-2xl overflow-hidden flex items-center justify-center bg-surface-container-lowest shadow-[0_4px_24px_0_rgba(0,0,70,0.05)] border border-surface-container">
+<img alt="Quên mật khẩu minh họa" class="w-full h-full object-cover" data-alt="A minimalist, modern 3D illustration of a secure lock and a floating envelope, symbolizing a password reset process. The illustration uses a light, airy color palette with soft whites, pale blues, and vibrant accents of primary blue. The style is clean, professional, and reassuring, perfectly suited for a modern financial app's light-mode interface. Soft ambient lighting creates subtle, smooth shadows on a pristine white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQlHs5vCNHrdNr7iaqpJtHSW7BcRxoV9xKDo0jgbceaiqUEQfNA8dKVrMjVMPAHXheXiJcGBE7N4dLccavtXhqfA0whbINhdASRMfE5H_MOtT8fpoSqbS1uWS1HVRjrCU-SePEFMiRiMEcGM4BQRe_KkN6QfoaCddVKzIXHdYdZ8kIpdOKnHU9CQyX2O4hS4X2dfrmQrSgl_PmXoImet71sWaRbh2RE1SXTWBi3aavKmyk8x09GyASzw"/>
+</div>
+<!-- Typography Block -->
+<div class="text-center w-full mb-stack-lg flex flex-col gap-stack-sm">
+<h1 class="font-display-lg-mobile text-display-lg-mobile text-on-surface">Quên mật khẩu</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant px-4">
+                Đừng lo lắng! Vui lòng nhập email được liên kết với tài khoản của bạn để nhận liên kết đặt lại mật khẩu.
+            </p>
+</div>
+<!-- Form Block -->
+<form class="w-full flex flex-col gap-stack-md" onsubmit="event.preventDefault();">
+<!-- Email Input Field -->
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant ml-1" for="email">Địa chỉ Email</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-4 text-outline z-10" style="font-variation-settings: 'FILL' 0;">mail</span>
+<input class="w-full bg-surface-alt border border-border-subtle rounded-xl pl-12 pr-4 py-3 font-body-lg text-body-lg text-on-surface placeholder:text-outline-variant focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200" id="email" name="email" placeholder="Nhập email của bạn" required="" type="email"/>
+</div>
+</div>
+<!-- Spacer -->
+<div class="h-2"></div>
+<!-- Primary Action Button -->
+<button class="w-full bg-primary text-on-primary font-headline-md text-headline-md py-4 rounded-xl flex items-center justify-center hover:bg-surface-tint hover:shadow-[0_4px_12px_0_rgba(0,74,198,0.2)] transition-all duration-200 active:scale-[0.98]" type="submit">
+                Gửi yêu cầu
+            </button>
+</form>
+<!-- Secondary Action / Return to Login -->
+<div class="mt-stack-lg">
+<button class="font-body-lg text-body-lg text-primary hover:text-surface-tint hover:underline transition-colors duration-200">
+                Quay lại đăng nhập
+            </button>
+</div>
+</main>
+</body></html>

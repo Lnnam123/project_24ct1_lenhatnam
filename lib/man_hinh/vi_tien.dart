@@ -10,6 +10,7 @@ class ManHinhViTien extends StatefulWidget {
   final VoidCallback moThemViTien;
   final Function(ViTien) moQuanLyViTien;
   final VoidCallback onTapThongBao;
+  final Function(GiaoDich)? moSuaGiaoDich;
 
   const ManHinhViTien({
     super.key,
@@ -18,6 +19,7 @@ class ManHinhViTien extends StatefulWidget {
     required this.moThemViTien,
     required this.moQuanLyViTien,
     required this.onTapThongBao,
+    this.moSuaGiaoDich,
   });
 
   @override
@@ -226,14 +228,17 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
                     itemBuilder: (ctx, index) {
                       final item = giaoDichDaLoc[index];
                       final isExpense = item.loai == LoaiGiaoDich.chiTieu;
-                      return Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: MauSac.surface,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: MauSac.borderSubtle),
-                        ),
-                        child: Row(
+                      return InkWell(
+                        onTap: () => widget.moSuaGiaoDich?.call(item),
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: MauSac.surface,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: MauSac.borderSubtle),
+                          ),
+                          child: Row(
                           children: [
                             CircleAvatar(
                               radius: 20,
@@ -273,7 +278,7 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
                             ),
                           ],
                         ),
-                      );
+                      ));
                     },
                   ),
             const SizedBox(height: 80),

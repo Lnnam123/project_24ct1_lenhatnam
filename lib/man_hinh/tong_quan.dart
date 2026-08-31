@@ -5,20 +5,23 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../mo_hinh/du_lieu.dart';
 import '../chu_de/mau_sac.dart';
-import '../thanh_phan/modal_ngan_sach.dart';
+//import '../thanh_phan/modal_ngan_sach.dart';
+import '../man_hinh/quan_ly_ngan_sach.dart';
 
 class ManHinhTongQuan extends StatefulWidget {
   final NguoiDung nguoiDung;
   final List<GiaoDich> danhSachGiaoDich;
   final List<ViTien> danhSachVi;
   final List<DanhMuc> danhSachDanhMuc;
-  final NganSach nganSach;
+  final List<NganSach> danhSachNganSach;
   final VoidCallback moThemGiaoDich;
+  final Function(GiaoDich) moSuaGiaoDich;
   final VoidCallback xemTatCaGiaoDich;
   final VoidCallback moThongBao;
   final Function(int, DanhMuc) onDoiDanhMucGiaoDich;
   final Future<void> Function() onRefresh;
-  final Function(double) onCapNhatNganSach;
+  final Function(NganSach) onCapNhatNganSach;
+  final Function(int) onXoaNganSach;
 
   const ManHinhTongQuan({
     super.key,
@@ -26,13 +29,15 @@ class ManHinhTongQuan extends StatefulWidget {
     required this.danhSachGiaoDich,
     required this.danhSachVi,
     required this.danhSachDanhMuc,
-    required this.nganSach,
+    required this.danhSachNganSach,
     required this.moThemGiaoDich,
+    required this.moSuaGiaoDich,
     required this.xemTatCaGiaoDich,
     required this.moThongBao,
     required this.onDoiDanhMucGiaoDich,
     required this.onRefresh,
     required this.onCapNhatNganSach,
+    required this.onXoaNganSach,
   });
 
   @override
@@ -40,7 +45,6 @@ class ManHinhTongQuan extends StatefulWidget {
 }
 
 class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
-
   double get tongSoDu => widget.danhSachVi.fold(0, (sum, v) => sum + v.soDu);
 
   String _dinhDangTien(double soTien) {
@@ -52,12 +56,15 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
     return formatter.format(soTien);
   }
 
-  void _moModalNganSach() {
+  void _moManHinhNganSach() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ModalNganSach(
-          nganSachCu: widget.nganSach,
+        builder: (context) => ManHinhQuanLyNganSach(
+          userId: widget.nguoiDung.id,
+          danhSachNganSachKhoiTao: widget.danhSachNganSach,
+          danhSachDanhMuc: widget.danhSachDanhMuc,
           onCapNhatNganSach: widget.onCapNhatNganSach,
+          onXoaNganSach: widget.onXoaNganSach,
         ),
       ),
     );
@@ -168,37 +175,62 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Đã chi: ${_dinhDangTien(widget.nganSach.daChi)} / ${_dinhDangTien(widget.nganSach.hanMuc)}',
-                          style: GoogleFonts.manrope(
-                            fontSize: 12,
-                            color: const Color(0xE6FFFFFF),
-                          ),
-                        ),
-                        Text(
-                          '${widget.nganSach.phanTram.toStringAsFixed(0)}%',
-                          style: GoogleFonts.manrope(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: LinearProgressIndicator(
-                        value: widget.nganSach.phanTram / 100,
-                        minHeight: 8,
-                        backgroundColor: Colors.white.withValues(alpha: 0.2),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Colors.white,
-                        ),
-                      ),
+                    Builder(
+                      builder: (context) {
+                        final tongNganSach = widget.danhSachNganSach
+                            .fold<double>(0, (sum, ns) => sum + ns.hanMuc);
+                        final tongDaChi = widget.danhSachNganSach.fold<double>(
+                          0,
+                          (sum, ns) => sum + ns.daChi,
+                        );
+                        final phanTram = tongNganSach > 0
+                            ? (tongDaChi / tongNganSach * 100).clamp(0, 100)
+                            : 0.0;
+
+                        return Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  tongNganSach > 0
+                                      ? 'Đã chi: ${_dinhDangTien(tongDaChi)} / ${_dinhDangTien(tongNganSach)}'
+                                      : 'Chưa có ngân sách',
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 12,
+                                    color: const Color(0xE6FFFFFF),
+                                  ),
+                                ),
+                                if (tongNganSach > 0)
+                                  Text(
+                                    '${phanTram.toStringAsFixed(0)}%',
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            if (tongNganSach > 0)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: LinearProgressIndicator(
+                                  value: phanTram / 100,
+                                  minHeight: 8,
+                                  backgroundColor: Colors.white.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                  valueColor:
+                                      const AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -244,7 +276,7 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                         ),
                         elevation: 0,
                       ),
-                      onPressed: _moModalNganSach,
+                      onPressed: _moManHinhNganSach,
                       icon: const Icon(Icons.pie_chart_outline, size: 20),
                       label: Text(
                         'Ngân sách',
@@ -304,61 +336,65 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                       itemBuilder: (ctx, index) {
                         final item = giaoDichGanDay[index];
                         final isExpense = item.loai == LoaiGiaoDich.chiTieu;
-                        return Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: MauSac.surface,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: MauSac.borderSubtle),
-                          ),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor: item.danhMuc.mauSac.withValues(
-                                  alpha: 0.15,
+                        return InkWell(
+                          onTap: () => widget.moSuaGiaoDich(item),
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: MauSac.surface,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: MauSac.borderSubtle),
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: item.danhMuc.mauSac
+                                      .withValues(alpha: 0.15),
+                                  child: Icon(
+                                    item.danhMuc.icon,
+                                    color: item.danhMuc.mauSac,
+                                    size: 20,
+                                  ),
                                 ),
-                                child: Icon(
-                                  item.danhMuc.icon,
-                                  color: item.danhMuc.mauSac,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.tieuDe,
-                                      style: GoogleFonts.manrope(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 15,
-                                        color: MauSac.onSurface,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.tieuDe,
+                                        style: GoogleFonts.manrope(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                          color: MauSac.onSurface,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '${DateFormat('dd/MM, HH:mm').format(item.ngay)} • ${item.viTien.tenVi}',
-                                      style: GoogleFonts.manrope(
-                                        fontSize: 12,
-                                        color: MauSac.onSurfaceVariant,
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '${DateFormat('dd/MM, HH:mm').format(item.ngay)} • ${item.viTien.tenVi}',
+                                        style: GoogleFonts.manrope(
+                                          fontSize: 12,
+                                          color: MauSac.onSurfaceVariant,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                '${isExpense ? '-' : '+'}${_dinhDangTien(item.soTien)}',
-                                style: GoogleFonts.manrope(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: isExpense
-                                      ? MauSac.onSurface
-                                      : MauSac.success,
+                                Text(
+                                  '${isExpense ? '-' : '+'}${_dinhDangTien(item.soTien)}',
+                                  style: GoogleFonts.manrope(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: isExpense
+                                        ? MauSac.onSurface
+                                        : MauSac.success,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         );
                       },

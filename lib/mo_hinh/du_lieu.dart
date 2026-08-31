@@ -238,6 +238,7 @@ class NganSach {
   double daChi;
   final DateTime ngayBatDau;
   final DateTime ngayKetThuc;
+  final DanhMuc? danhMuc;
 
   NganSach({
     required this.id,
@@ -245,19 +246,10 @@ class NganSach {
     required this.daChi,
     required this.ngayBatDau,
     required this.ngayKetThuc,
+    this.danhMuc,
   });
 
-  double get phanTram => (daChi / hanMuc * 100).clamp(0, 100);
-
-  factory NganSach.fromMap(Map<String, dynamic> map, double tongChiTieu) {
-    return NganSach(
-      id: map['budget_id'],
-      hanMuc: (map['amount_limit'] as num).toDouble(),
-      daChi: tongChiTieu,
-      ngayBatDau: DateTime.parse(map['start_date']),
-      ngayKetThuc: DateTime.parse(map['end_date']),
-    );
-  }
+  double get phanTram => hanMuc > 0 ? (daChi / hanMuc * 100).clamp(0, 100) : 0;
 }
 
 class ThongBao {

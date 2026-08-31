@@ -9,12 +9,18 @@ class ModalThemGiaoDich extends StatefulWidget {
   final List<ViTien> danhSachVi;
   final List<DanhMuc> danhSachDanhMuc;
   final Function(GiaoDich) onThemGiaoDich;
+  final Function(GiaoDich)? onSuaGiaoDich;
+  final Function(int)? onXoaGiaoDich;
+  final GiaoDich? giaoDichCu;
 
   const ModalThemGiaoDich({
     super.key,
     required this.danhSachVi,
     required this.danhSachDanhMuc,
     required this.onThemGiaoDich,
+    this.onSuaGiaoDich,
+    this.onXoaGiaoDich,
+    this.giaoDichCu,
   });
 
   @override
@@ -27,7 +33,8 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
   
   late ViTien _viDangChon;
   late DanhMuc _danhMucDangChon;
-  final DateTime _ngayChon = DateTime.now();
+  late DateTime _ngayChon;
+  late LoaiGiaoDich _loaiDangChon;
 
   bool _isManualTab = true;
 
@@ -39,8 +46,32 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
   @override
   void initState() {
     super.initState();
-    _viDangChon = widget.danhSachVi.first;
-    _danhMucDangChon = widget.danhSachDanhMuc.first;
+    if (widget.giaoDichCu != null) {
+      _ngayChon = widget.giaoDichCu!.ngay;
+      _viDangChon = widget.danhSachVi.firstWhere((v) => v.id == widget.giaoDichCu!.viTien.id, orElse: () => widget.danhSachVi.first);
+      _danhMucDangChon = widget.danhSachDanhMuc.firstWhere((d) => d.id == widget.giaoDichCu!.danhMuc.id, orElse: () => widget.danhSachDanhMuc.first);
+      
+      // Format balance
+      String amountStr = widget.giaoDichCu!.soTien.toStringAsFixed(0);
+      String formattedText = '';
+      int count = 0;
+      for (int i = amountStr.length - 1; i >= 0; i--) {
+        formattedText = amountStr[i] + formattedText;
+        count++;
+        if (count % 3 == 0 && i != 0) {
+          formattedText = ',' + formattedText;
+        }
+      }
+      _amountController.text = formattedText;
+      _noteController.text = widget.giaoDichCu!.ghiChu ?? '';
+      _loaiDangChon = widget.giaoDichCu!.loai;
+    } else {
+      _ngayChon = DateTime.now();
+      _loaiDangChon = LoaiGiaoDich.chiTieu;
+      _viDangChon = widget.danhSachVi.first;
+      _danhMucDangChon = widget.danhSachDanhMuc.firstWhere((d) => d.loai == _loaiDangChon, orElse: () => widget.danhSachDanhMuc.first);
+    }
+    
     _pageController = PageController(initialPage: 0);
     
     _pulseController = AnimationController(
@@ -77,8 +108,24 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
       return;
     }
 
+    double availableBalance = _viDangChon.soDu;
+    if (widget.giaoDichCu != null && widget.giaoDichCu!.viTien.id == _viDangChon.id && widget.giaoDichCu!.loai == LoaiGiaoDich.chiTieu) {
+      availableBalance += widget.giaoDichCu!.soTien;
+    }
+
+    if (_danhMucDangChon.loai == LoaiGiaoDich.chiTieu && amount > availableBalance) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Số dư ví không đủ! Vui lòng chọn ví khác hoặc nhập số tiền nhỏ hơn.'),
+          backgroundColor: MauSac.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     final giaoDichMoi = GiaoDich(
-      id: DateTime.now().millisecondsSinceEpoch,
+      id: widget.giaoDichCu?.id ?? DateTime.now().millisecondsSinceEpoch,
       tieuDe: _noteController.text.trim().isEmpty
           ? _danhMucDangChon.ten
           : _noteController.text.trim(),
@@ -90,7 +137,12 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
       ghiChu: _noteController.text.trim(),
     );
 
-    widget.onThemGiaoDich(giaoDichMoi);
+    if (widget.giaoDichCu != null) {
+      widget.onSuaGiaoDich?.call(giaoDichMoi);
+    } else {
+      widget.onThemGiaoDich(giaoDichMoi);
+    }
+    
     Navigator.of(context).pop();
   }
 
@@ -182,9 +234,93 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
                   ),
                 ),
                 const SizedBox(height: 12),
+                
+                // Toggle Type (Chi tiêu / Thu nhập)
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: MauSac.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _loaiDangChon = LoaiGiaoDich.chiTieu;
+                            _danhMucDangChon = widget.danhSachDanhMuc.firstWhere(
+                              (d) => d.loai == LoaiGiaoDich.chiTieu,
+                              orElse: () => widget.danhSachDanhMuc.first,
+                            );
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _loaiDangChon == LoaiGiaoDich.chiTieu ? MauSac.surface : Colors.transparent,
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: _loaiDangChon == LoaiGiaoDich.chiTieu ? [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              )
+                            ] : null,
+                          ),
+                          child: Text(
+                            'Chi tiêu',
+                            style: GoogleFonts.manrope(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: _loaiDangChon == LoaiGiaoDich.chiTieu ? MauSac.primary : MauSac.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _loaiDangChon = LoaiGiaoDich.thuNhap;
+                            _danhMucDangChon = widget.danhSachDanhMuc.firstWhere(
+                              (d) => d.loai == LoaiGiaoDich.thuNhap,
+                              orElse: () => widget.danhSachDanhMuc.first,
+                            );
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _loaiDangChon == LoaiGiaoDich.thuNhap ? MauSac.surface : Colors.transparent,
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: _loaiDangChon == LoaiGiaoDich.thuNhap ? [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              )
+                            ] : null,
+                          ),
+                          child: Text(
+                            'Thu nhập',
+                            style: GoogleFonts.manrope(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: _loaiDangChon == LoaiGiaoDich.thuNhap ? MauSac.primary : MauSac.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
                 Builder(
                   builder: (ctx) {
-                    final categoriesFiltered = widget.danhSachDanhMuc;
+                    final categoriesFiltered = widget.danhSachDanhMuc
+                        .where((d) => d.loai == _loaiDangChon)
+                        .toList();
 
                     return SizedBox(
                       height: 44,
@@ -356,7 +492,7 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
                   const Icon(Icons.check_circle, size: 24),
                   const SizedBox(width: 8),
                   Text(
-                    'Lưu giao dịch',
+                    widget.giaoDichCu != null ? 'Cập nhật' : 'Lưu giao dịch',
                     style: GoogleFonts.manrope(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -481,7 +617,7 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Giao dịch mới',
+          widget.giaoDichCu != null ? 'Sửa giao dịch' : 'Giao dịch mới',
           style: GoogleFonts.manrope(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -489,6 +625,18 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
           ),
         ),
         centerTitle: true,
+        actions: [
+          if (widget.giaoDichCu != null)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: MauSac.error),
+              onPressed: () {
+                if (widget.onXoaGiaoDich != null) {
+                  widget.onXoaGiaoDich!(widget.giaoDichCu!.id!);
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+        ],
       ),
       body: Column(
         children: [

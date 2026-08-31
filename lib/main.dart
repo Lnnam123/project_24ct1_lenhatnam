@@ -75,7 +75,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
   List<ViTien> _danhSachVi = [];
   List<DanhMuc> _danhSachDanhMuc = [];
   List<GiaoDich> _danhSachGiaoDich = [];
-  NganSach? _nganSach;
+  List<NganSach> _danhSachNganSach = [];
   bool _isLoading = true;
   NguoiDung? _nguoiDungHienTai;
 
@@ -93,44 +93,74 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
     final results = await Future.wait([
       db.getWallets(widget.nguoiDung.id),
       db.getCategories(widget.nguoiDung.id),
-      db.getBudget(widget.nguoiDung.id),
     ]);
 
     final wallets = results[0] as List<ViTien>;
     final categories = results[1] as List<DanhMuc>;
-    final budget = results[2] as NganSach;
+    
+    // Tải danh sách ngân sách (truyền danh mục để link)
+    final budgets = await db.getBudgets(widget.nguoiDung.id, categories);
 
     final transactions = await db.getTransactions(widget.nguoiDung.id, wallets, categories);
 
-    // Calculate daChi (total spent this month)
-    final now = DateTime.now();
-    double totalSpent = 0;
-    for (var tx in transactions) {
-      if (tx.loai == LoaiGiaoDich.chiTieu && tx.ngay.year == now.year && tx.ngay.month == now.month) {
-        totalSpent += tx.soTien;
+    // Tính tổng chi tiêu cho từng ngân sách trong danh sách
+    for (var budget in budgets) {
+      double totalSpent = 0;
+      for (var tx in transactions) {
+        if (tx.loai == LoaiGiaoDich.chiTieu &&
+            (tx.ngay.isAfter(budget.ngayBatDau) || tx.ngay.isAtSameMomentAs(budget.ngayBatDau)) &&
+            (tx.ngay.isBefore(budget.ngayKetThuc) || tx.ngay.isAtSameMomentAs(budget.ngayKetThuc))) {
+          // Nếu ngân sách có giới hạn danh mục, kiểm tra danh mục
+          if (budget.danhMuc == null || budget.danhMuc!.id == tx.danhMuc.id) {
+            totalSpent += tx.soTien;
+          }
+        }
       }
+      budget.daChi = totalSpent;
     }
-    budget.daChi = totalSpent;
 
     if (mounted) {
       setState(() {
         _danhSachVi = wallets;
         _danhSachDanhMuc = categories;
         _danhSachGiaoDich = transactions;
-        _nganSach = budget;
+        _danhSachNganSach = budgets;
         _isLoading = false;
       });
     }
   }
 
-  void _capNhatNganSach(double hanMucMoi) async {
-    await DatabaseHelper.instance.updateBudget(widget.nguoiDung.id, hanMucMoi);
+  void _capNhatNganSach(NganSach nganSach) async {
+    try {
+      await DatabaseHelper.instance.updateBudget(nganSach, widget.nguoiDung.id);
+      await _taiDuLieuTuDatabase();
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đã cập nhật ngân sách thành công!', style: GoogleFonts.manrope()),
+          backgroundColor: MauSac.success,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi khi lưu ngân sách: $e', style: GoogleFonts.manrope()),
+          backgroundColor: MauSac.error,
+        ),
+      );
+    }
+  }
+
+  void _xoaNganSach(int budgetId) async {
+    await DatabaseHelper.instance.deleteBudget(budgetId);
     await _taiDuLieuTuDatabase();
     
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Đã cập nhật hạn mức ngân sách!', style: GoogleFonts.manrope()),
+        content: Text('Đã xóa ngân sách!', style: GoogleFonts.manrope()),
         backgroundColor: MauSac.success,
       ),
     );
@@ -144,6 +174,32 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Đã lưu giao dịch vào cơ sở dữ liệu!', style: GoogleFonts.manrope()),
+        backgroundColor: MauSac.success,
+      ),
+    );
+  }
+
+  void _suaGiaoDich(GiaoDich giaoDich) async {
+    await DatabaseHelper.instance.updateTransaction(giaoDich);
+    await _taiDuLieuTuDatabase();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã cập nhật giao dịch thành công!', style: GoogleFonts.manrope()),
+        backgroundColor: MauSac.success,
+      ),
+    );
+  }
+
+  void _xoaGiaoDich(int id) async {
+    await DatabaseHelper.instance.deleteTransaction(id);
+    await _taiDuLieuTuDatabase();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã xóa giao dịch!', style: GoogleFonts.manrope()),
         backgroundColor: MauSac.success,
       ),
     );
@@ -163,6 +219,23 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
           danhSachVi: _danhSachVi,
           danhSachDanhMuc: _danhSachDanhMuc,
           onThemGiaoDich: _themGiaoDich,
+        ),
+      ),
+    );
+  }
+
+  void _moModalSuaGiaoDich(GiaoDich giaoDichCu) {
+    if (_danhSachVi.isEmpty) return;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (ctx) => ModalThemGiaoDich(
+          danhSachVi: _danhSachVi,
+          danhSachDanhMuc: _danhSachDanhMuc,
+          onThemGiaoDich: _themGiaoDich,
+          onSuaGiaoDich: _suaGiaoDich,
+          onXoaGiaoDich: _xoaGiaoDich,
+          giaoDichCu: giaoDichCu,
         ),
       ),
     );
@@ -281,11 +354,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        body: TrangTongQuanSkeleton(),
-      );
-    }
+
 
     final nguoiDung = _nguoiDungHienTai ?? widget.nguoiDung;
 
@@ -295,8 +364,9 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
         danhSachGiaoDich: _danhSachGiaoDich,
         danhSachVi: _danhSachVi,
         danhSachDanhMuc: _danhSachDanhMuc,
-        nganSach: _nganSach ?? NganSach(id: 0, hanMuc: 0, daChi: 0, ngayBatDau: DateTime.now(), ngayKetThuc: DateTime.now()),
+        danhSachNganSach: _danhSachNganSach,
         moThemGiaoDich: _moModalThemGiaoDich,
+        moSuaGiaoDich: _moModalSuaGiaoDich,
         xemTatCaGiaoDich: () {
           setState(() {
             _chiMucHienTai = 2; // Chuyển sang tab Ví
@@ -310,9 +380,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
         onDoiDanhMucGiaoDich: _doiDanhMucGiaoDich,
         onRefresh: _taiDuLieuTuDatabase,
         onCapNhatNganSach: _capNhatNganSach,
+        onXoaNganSach: _xoaNganSach,
       ),
       ManHinhPhanTich(
         danhSachGiaoDich: _danhSachGiaoDich,
+        moSuaGiaoDich: _moModalSuaGiaoDich,
         onTapThongBao: () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => ManHinhThongBao(userId: nguoiDung.id)),
@@ -324,6 +396,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
         danhSachGiaoDich: _danhSachGiaoDich, 
         moThemViTien: _moModalQuanLyViTien,
         moQuanLyViTien: _moModalQuanLyViTien,
+        moSuaGiaoDich: _moModalSuaGiaoDich,
         onTapThongBao: () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => ManHinhThongBao(userId: nguoiDung.id)),
@@ -340,8 +413,24 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
       ),
     ];
 
-    return Scaffold(
-      body: AnimatedSwitcher(
+    Widget bodyContent;
+    if (_isLoading) {
+      switch (_chiMucHienTai) {
+        case 1:
+          bodyContent = const PhanTichSkeleton();
+          break;
+        case 2:
+          bodyContent = const ViTienSkeleton();
+          break;
+        case 3:
+          bodyContent = const CaiDatSkeleton();
+          break;
+        case 0:
+        default:
+          bodyContent = const TrangTongQuanSkeleton();
+      }
+    } else {
+      bodyContent = AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         switchInCurve: Curves.easeOutCubic,
         switchOutCurve: Curves.easeInCubic,
@@ -370,7 +459,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
           key: ValueKey<int>(_chiMucHienTai),
           child: cacManHinh[_chiMucHienTai],
         ),
-      ),
+      );
+    }
+
+    return Scaffold(
+      body: bodyContent,
       floatingActionButton: FloatingActionButton(
         backgroundColor: MauSac.primary,
         foregroundColor: Colors.white,

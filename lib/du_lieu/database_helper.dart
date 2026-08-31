@@ -252,62 +252,71 @@ class DatabaseHelper {
     return [];
   }
 
-  Future<NganSach> getBudget(int userId) async {
+  Future<List<NganSach>> getBudgets(int userId, List<DanhMuc> danhSachDanhMuc) async {
     try {
       final response = await _supabase
           .from('budgets')
           .select()
           .eq('user_id', userId)
-          .order('created_at', ascending: false)
-          .limit(1);
+          .order('created_at', ascending: false);
           
       if (response.isNotEmpty) {
-        final m = response.first;
-        return NganSach(
-          id: m['budget_id'],
-          hanMuc: double.tryParse(m['amount']?.toString() ?? '0') ?? 0.0,
-          daChi: 0, // daChi will be calculated in main.dart
-          ngayBatDau: m['start_date'] != null ? DateTime.parse(m['start_date']) : DateTime.now(),
-          ngayKetThuc: m['end_date'] != null ? DateTime.parse(m['end_date']) : DateTime.now().add(const Duration(days: 30)),
-        );
+        return response.map<NganSach>((m) {
+          DanhMuc? category;
+          if (m['category_id'] != null) {
+            try {
+              category = danhSachDanhMuc.firstWhere((c) => c.id == m['category_id']);
+            } catch (e) {
+              // ignore
+            }
+          }
+          
+          return NganSach(
+            id: m['budget_id'],
+            hanMuc: double.tryParse(m['amount']?.toString() ?? '0') ?? 0.0,
+            daChi: 0, // daChi will be calculated in main.dart
+            ngayBatDau: m['start_date'] != null ? DateTime.parse(m['start_date']) : DateTime.now(),
+            ngayKetThuc: m['end_date'] != null ? DateTime.parse(m['end_date']) : DateTime.now().add(const Duration(days: 30)),
+            danhMuc: category,
+          );
+        }).toList();
       }
     } catch (e) {
-      debugPrint('Lỗi getBudget: $e');
+      debugPrint('Lỗi getBudgets: $e');
     }
-    
-    // Default fallback
-    final now = DateTime.now();
-    return NganSach(id: 0, hanMuc: 5000000, daChi: 0, ngayBatDau: DateTime(now.year, now.month, 1), ngayKetThuc: DateTime(now.year, now.month + 1, 0));
+    return [];
   }
 
-  Future<void> updateBudget(int userId, double amount) async {
+  Future<void> updateBudget(NganSach nganSach, int userId) async {
     try {
-      final response = await _supabase
-          .from('budgets')
-          .select('budget_id')
-          .eq('user_id', userId)
-          .limit(1);
-          
-      if (response.isNotEmpty) {
-        // Update existing
-        await _supabase.from('budgets').update({
-          'amount': amount,
-        }).eq('budget_id', response.first['budget_id']);
-      } else {
-        // Insert new
-        final now = DateTime.now();
-        final startOfMonth = DateTime(now.year, now.month, 1);
-        final endOfMonth = DateTime(now.year, now.month + 1, 0);
-        
+      if (nganSach.id == 0) {
+        // Insert
         await _supabase.from('budgets').insert({
           'user_id': userId,
-          'amount': amount,
-          'start_date': startOfMonth.toIso8601String(),
-          'end_date': endOfMonth.toIso8601String(),
+          'category_id': nganSach.danhMuc?.id,
+          'amount': nganSach.hanMuc,
+          'start_date': nganSach.ngayBatDau.toIso8601String(),
+          'end_date': nganSach.ngayKetThuc.toIso8601String(),
         });
+      } else {
+        // Update
+        await _supabase.from('budgets').update({
+          'category_id': nganSach.danhMuc?.id,
+          'amount': nganSach.hanMuc,
+        }).eq('budget_id', nganSach.id);
       }
     } catch (e) {
       debugPrint('Lỗi updateBudget: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteBudget(int budgetId) async {
+    try {
+      await _supabase.from('budgets').delete().eq('budget_id', budgetId);
+    } catch (e) {
+      debugPrint('Lỗi deleteBudget: $e');
+      rethrow;
     }
   }
 
@@ -324,6 +333,29 @@ class DatabaseHelper {
       });
     } catch (e) {
       debugPrint('Lỗi insertTransaction: $e');
+    }
+  }
+
+  Future<void> updateTransaction(GiaoDich tx) async {
+    try {
+      await _supabase.from('transactions').update({
+        'wallet_id': tx.viTien.id,
+        'category_id': tx.danhMuc.id,
+        'amount': tx.soTien,
+        'type': tx.loai == LoaiGiaoDich.chiTieu ? 'EXPENSE' : 'INCOME',
+        'transaction_date': tx.ngay.toIso8601String(),
+        'note': tx.tieuDe,
+      }).eq('transaction_id', tx.id!);
+    } catch (e) {
+      debugPrint('Lỗi updateTransaction: $e');
+    }
+  }
+
+  Future<void> deleteTransaction(int transactionId) async {
+    try {
+      await _supabase.from('transactions').delete().eq('transaction_id', transactionId);
+    } catch (e) {
+      debugPrint('Lỗi deleteTransaction: $e');
     }
   }
 

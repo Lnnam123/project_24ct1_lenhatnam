@@ -7,6 +7,7 @@ import 'dang_ky.dart';
 import '../main.dart'; // To access ManHinhChinh (we will refactor this later if needed)
 
 import 'dang_nhap_nhanh.dart';
+import 'quen_mat_khau.dart';
 
 class ManHinhDangNhap extends StatefulWidget {
   final bool allowRedirect;
@@ -179,7 +180,12 @@ class _ManHinhDangNhapState extends State<ManHinhDangNhap> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ManHinhQuenMatKhau()),
+                    );
+                  },
                   child: Text(
                     'Quên mật khẩu?',
                     style: GoogleFonts.manrope(color: MauSac.primary, fontWeight: FontWeight.bold),

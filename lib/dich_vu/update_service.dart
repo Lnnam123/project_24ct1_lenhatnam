@@ -119,46 +119,22 @@ class UpdateService {
   
   static void _taiVaCaiDatAPK(BuildContext context, String downloadUrl) {
     try {
+      // Bắt đầu tải
+      final stream = OtaUpdate().execute(
+        downloadUrl,
+        destinationFilename: 'cointap_update.apk',
+      );
+      
       // Hiển thị dialog tiến trình
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (dialogContext) {
-          return const _TienTrinhTaiXuong();
+          return _TienTrinhTaiXuong(stream: stream);
         }
-      );
-      
-      // Bắt đầu tải và lắng nghe sự kiện
-      OtaUpdate().execute(
-        downloadUrl,
-        destinationFilename: 'cointap_update.apk',
-      ).listen(
-        (OtaEvent event) {
-          if (event.status == OtaStatus.DOWNLOADING) {
-            // Có thể dùng event.value để biết % nếu cần update UI dialog (phức tạp hơn nên đang để spinner quay vô hạn)
-            debugPrint('Đang tải: ${event.value}%');
-          } else if (event.status == OtaStatus.INSTALLING) {
-            // Đã tải xong, Android sẽ tự hiện bảng Cài đặt. Mình đóng dialog tiến trình.
-            if (context.mounted && Navigator.of(context).canPop()) {
-              Navigator.of(context).pop(); 
-            }
-          } else if (event.status == OtaStatus.PERMISSION_NOT_GRANTED_ERROR) {
-            if (context.mounted) {
-              if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-              _hienThongBaoSnackBar(context, 'Lỗi: Ứng dụng không được cấp quyền ghi bộ nhớ!', isError: true);
-            }
-          } else if (event.status != OtaStatus.DOWNLOADING) {
-            // Các lỗi khác
-            if (context.mounted) {
-              if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-              _hienThongBaoSnackBar(context, 'Có lỗi trong quá trình cập nhật!', isError: true);
-            }
-          }
-        },
       );
     } catch (e) {
       if (context.mounted) {
-        if (Navigator.of(context).canPop()) Navigator.of(context).pop();
         _hienThongBaoSnackBar(context, 'Lỗi khởi chạy tải xuống: $e', isError: true);
       }
     }
@@ -192,23 +168,103 @@ class UpdateService {
   }
 }
 
-class _TienTrinhTaiXuong extends StatelessWidget {
-  const _TienTrinhTaiXuong();
+class _TienTrinhTaiXuong extends StatefulWidget {
+  final Stream<OtaEvent> stream;
+  const _TienTrinhTaiXuong({required this.stream});
+
+  @override
+  State<_TienTrinhTaiXuong> createState() => _TienTrinhTaiXuongState();
+}
+
+class _TienTrinhTaiXuongState extends State<_TienTrinhTaiXuong> {
+  String _progress = '0';
+  String _status = 'Đang kết nối...';
+  
+  @override
+  void initState() {
+    super.initState();
+    widget.stream.listen(
+      (OtaEvent event) {
+        if (!mounted) return;
+        if (event.status == OtaStatus.DOWNLOADING) {
+          setState(() {
+            _progress = event.value ?? '0';
+            _status = 'Đang tải xuống...';
+          });
+        } else if (event.status == OtaStatus.INSTALLING) {
+          setState(() => _status = 'Đang chuẩn bị cài đặt...');
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+        } else if (event.status == OtaStatus.PERMISSION_NOT_GRANTED_ERROR) {
+          if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+          _hienThongBaoSnackBar(context, 'Lỗi: Ứng dụng không được cấp quyền ghi bộ nhớ!', isError: true);
+        } else if (event.status != OtaStatus.DOWNLOADING) {
+          if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+          _hienThongBaoSnackBar(context, 'Có lỗi trong quá trình cập nhật!', isError: true);
+        }
+      },
+      onError: (error) {
+        if (!mounted) return;
+        if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+        _hienThongBaoSnackBar(context, 'Lỗi tải xuống: $error', isError: true);
+      },
+    );
+  }
+
+  void _hienThongBaoSnackBar(BuildContext context, String thongBao, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          thongBao,
+          style: GoogleFonts.manrope(color: MauSac.surface),
+        ),
+        backgroundColor: isError ? MauSac.error : MauSac.success,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    double progressValue = double.tryParse(_progress) ?? 0;
+    
     return AlertDialog(
       backgroundColor: MauSac.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       content: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(color: MauSac.primary),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 80,
+                  height: 80,
+                  child: CircularProgressIndicator(
+                    value: progressValue > 0 ? progressValue / 100 : null,
+                    color: MauSac.primary,
+                    backgroundColor: MauSac.surfaceContainerHigh,
+                    strokeWidth: 6,
+                  ),
+                ),
+                Text(
+                  '$_progress%',
+                  style: GoogleFonts.manrope(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: MauSac.primary,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 24),
             Text(
-              'Đang tải xuống bản cập nhật...',
+              _status,
               style: GoogleFonts.manrope(
                 fontWeight: FontWeight.w600,
                 color: MauSac.onSurface,

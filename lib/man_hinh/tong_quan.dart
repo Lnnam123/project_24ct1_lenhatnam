@@ -22,6 +22,7 @@ class ManHinhTongQuan extends StatefulWidget {
   final Future<void> Function() onRefresh;
   final Function(NganSach) onCapNhatNganSach;
   final Function(int) onXoaNganSach;
+  final bool coThongBaoChuaDoc;
 
   const ManHinhTongQuan({
     super.key,
@@ -38,6 +39,7 @@ class ManHinhTongQuan extends StatefulWidget {
     required this.onRefresh,
     required this.onCapNhatNganSach,
     required this.onXoaNganSach,
+    this.coThongBaoChuaDoc = false,
   });
 
   @override
@@ -45,6 +47,8 @@ class ManHinhTongQuan extends StatefulWidget {
 }
 
 class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
+  bool _anSoDu = false;
+  
   double get tongSoDu => widget.danhSachVi.fold(0, (sum, v) => sum + v.soDu);
 
   String _dinhDangTien(double soTien) {
@@ -96,18 +100,19 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                   Icons.notifications_outlined,
                   color: MauSac.onSurface,
                 ),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: MauSac.error,
-                      shape: BoxShape.circle,
+                if (widget.coThongBaoChuaDoc)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: MauSac.error,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
             onPressed: widget.moThongBao,
@@ -156,18 +161,35 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'TỔNG SỐ DƯ',
-                      style: GoogleFonts.manrope(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                        color: Colors.white70,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'TỔNG SỐ DƯ',
+                          style: GoogleFonts.manrope(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            setState(() {
+                              _anSoDu = !_anSoDu;
+                            });
+                          },
+                          child: Icon(
+                            _anSoDu ? Icons.visibility_off : Icons.visibility,
+                            color: Colors.white70,
+                            size: 20,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      _dinhDangTien(tongSoDu),
+                      _anSoDu ? '****** đ' : _dinhDangTien(tongSoDu),
                       style: GoogleFonts.manrope(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -214,19 +236,17 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                             ),
                             const SizedBox(height: 8),
                             if (tongNganSach > 0)
-                              ClipRRect(
+                              LinearProgressIndicator(
+                                value: phanTram / 100,
+                                minHeight: 8,
                                 borderRadius: BorderRadius.circular(10),
-                                child: LinearProgressIndicator(
-                                  value: phanTram / 100,
-                                  minHeight: 8,
-                                  backgroundColor: Colors.white.withValues(
-                                    alpha: 0.2,
-                                  ),
-                                  valueColor:
-                                      const AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
+                                backgroundColor: Colors.white.withValues(
+                                  alpha: 0.2,
                                 ),
+                                valueColor:
+                                    const AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
                               ),
                           ],
                         );
@@ -389,7 +409,7 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
                                     color: isExpense
-                                        ? MauSac.onSurface
+                                        ? MauSac.error
                                         : MauSac.success,
                                   ),
                                 ),

@@ -184,14 +184,12 @@ class _ManHinhQuanLyNganSachState extends State<ManHinhQuanLyNganSach> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        ClipRRect(
+                        LinearProgressIndicator(
+                          value: ns.phanTram / 100,
+                          minHeight: 8,
                           borderRadius: BorderRadius.circular(8),
-                          child: LinearProgressIndicator(
-                            value: ns.phanTram / 100,
-                            minHeight: 8,
-                            backgroundColor: mauThanhTienDo.withValues(alpha: 0.2),
-                            valueColor: AlwaysStoppedAnimation<Color>(mauThanhTienDo),
-                          ),
+                          backgroundColor: mauThanhTienDo.withValues(alpha: 0.2),
+                          valueColor: AlwaysStoppedAnimation<Color>(mauThanhTienDo),
                         ),
                       ],
                     ),

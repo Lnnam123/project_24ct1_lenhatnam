@@ -173,6 +173,8 @@ class UpdateService {
         ),
         backgroundColor: isError ? MauSac.error : MauSac.success,
         behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

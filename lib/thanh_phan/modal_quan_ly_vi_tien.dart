@@ -201,6 +201,12 @@ class _ModalQuanLyViTienState extends State<ModalQuanLyViTien> {
                             fontWeight: FontWeight.bold,
                             color: MauSac.surfaceContainerHighest,
                           ),
+                          suffixText: 'đ',
+                          suffixStyle: GoogleFonts.manrope(
+                            fontSize: 48,
+                            fontWeight: FontWeight.bold,
+                            color: MauSac.onSurface,
+                          ),
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.zero,

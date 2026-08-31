@@ -10,6 +10,8 @@ class ManHinhViTien extends StatefulWidget {
   final VoidCallback moThemViTien;
   final Function(ViTien) moQuanLyViTien;
   final VoidCallback onTapThongBao;
+  final bool coThongBaoChuaDoc;
+  final Future<void> Function() onRefresh;
   final Function(GiaoDich)? moSuaGiaoDich;
 
   const ManHinhViTien({
@@ -19,6 +21,8 @@ class ManHinhViTien extends StatefulWidget {
     required this.moThemViTien,
     required this.moQuanLyViTien,
     required this.onTapThongBao,
+    required this.coThongBaoChuaDoc,
+    required this.onRefresh,
     this.moSuaGiaoDich,
   });
 
@@ -28,6 +32,7 @@ class ManHinhViTien extends StatefulWidget {
 
 class _ManHinhViTienState extends State<ManHinhViTien> {
   String _boloc = 'Tất cả';
+  final Set<int> _viTienAnSoDu = {};
 
   String _dinhDangTien(double soTien) {
     final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: '₫', decimalDigits: 0);
@@ -64,18 +69,19 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
                   Icons.notifications_outlined,
                   color: MauSac.onSurface,
                 ),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: MauSac.error,
-                      shape: BoxShape.circle,
+                if (widget.coThongBaoChuaDoc)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: MauSac.error,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
             onPressed: widget.onTapThongBao,
@@ -83,9 +89,12 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
           const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+      body: RefreshIndicator(
+        onRefresh: widget.onRefresh,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -112,6 +121,7 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
                 separatorBuilder: (ctx, i) => const SizedBox(width: 12),
                 itemBuilder: (ctx, index) {
                   final vi = widget.danhSachVi[index];
+                  final isHidden = _viTienAnSoDu.contains(vi.id);
                   return GestureDetector(
                     onTap: () => widget.moQuanLyViTien(vi),
                     child: Container(
@@ -167,13 +177,34 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
-                              Text(
-                                _dinhDangTien(vi.soDu),
-                                style: GoogleFonts.manrope(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold,
-                                  color: MauSac.onSurface,
-                                ),
+                              Row(
+                                children: [
+                                  Text(
+                                    isHidden ? '****** đ' : _dinhDangTien(vi.soDu),
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                      color: MauSac.onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        if (isHidden) {
+                                          _viTienAnSoDu.remove(vi.id);
+                                        } else {
+                                          _viTienAnSoDu.add(vi.id);
+                                        }
+                                      });
+                                    },
+                                    child: Icon(
+                                      isHidden ? Icons.visibility_off : Icons.visibility,
+                                      color: MauSac.onSurfaceVariant,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -273,7 +304,7 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
                               style: GoogleFonts.manrope(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
-                                color: isExpense ? MauSac.onSurface : MauSac.success,
+                                color: isExpense ? MauSac.error : MauSac.success,
                               ),
                             ),
                           ],
@@ -284,6 +315,7 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
             const SizedBox(height: 80),
           ],
         ),
+      ),
       ),
     );
   }

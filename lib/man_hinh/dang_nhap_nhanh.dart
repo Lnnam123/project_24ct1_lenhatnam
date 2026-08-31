@@ -7,6 +7,7 @@ import '../du_lieu/database_helper.dart';
 import '../mo_hinh/du_lieu.dart';
 import 'dang_nhap.dart';
 import '../main.dart'; // To access ManHinhChinh
+import 'quen_mat_khau.dart';
 
 class ManHinhDangNhapNhanh extends StatefulWidget {
   final int savedUserId;
@@ -198,6 +199,31 @@ class _ManHinhDangNhapNhanhState extends State<ManHinhDangNhapNhanh> {
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: MauSac.borderSubtle),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ManHinhQuenMatKhau()),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Quên mật khẩu?',
+                        style: GoogleFonts.manrope(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: MauSac.primary,
+                        ),
                       ),
                     ),
                   ),

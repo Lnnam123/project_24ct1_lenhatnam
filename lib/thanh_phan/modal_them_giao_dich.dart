@@ -208,11 +208,17 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
                         color: MauSac.onSurface,
                       ),
                       decoration: InputDecoration(
-                        hintText: '0đ',
+                        hintText: '0',
                         hintStyle: GoogleFonts.manrope(
                           fontSize: 48,
                           fontWeight: FontWeight.bold,
                           color: MauSac.surfaceContainerHighest,
+                        ),
+                        suffixText: 'đ',
+                        suffixStyle: GoogleFonts.manrope(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: MauSac.onSurface,
                         ),
                         border: InputBorder.none,
                         isDense: true,
@@ -240,76 +246,86 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: MauSac.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  child: Stack(
                     children: [
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _loaiDangChon = LoaiGiaoDich.chiTieu;
-                            _danhMucDangChon = widget.danhSachDanhMuc.firstWhere(
-                              (d) => d.loai == LoaiGiaoDich.chiTieu,
-                              orElse: () => widget.danhSachDanhMuc.first,
-                            );
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: _loaiDangChon == LoaiGiaoDich.chiTieu ? MauSac.surface : Colors.transparent,
-                            borderRadius: BorderRadius.circular(6),
-                            boxShadow: _loaiDangChon == LoaiGiaoDich.chiTieu ? [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              )
-                            ] : null,
-                          ),
-                          child: Text(
-                            'Chi tiêu',
-                            style: GoogleFonts.manrope(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: _loaiDangChon == LoaiGiaoDich.chiTieu ? MauSac.primary : MauSac.onSurfaceVariant,
+                      Positioned.fill(
+                        child: AnimatedAlign(
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeInOutCubic,
+                          alignment: _loaiDangChon == LoaiGiaoDich.chiTieu ? Alignment.centerLeft : Alignment.centerRight,
+                          child: FractionallySizedBox(
+                            widthFactor: 0.5,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: MauSac.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _loaiDangChon = LoaiGiaoDich.thuNhap;
-                            _danhMucDangChon = widget.danhSachDanhMuc.firstWhere(
-                              (d) => d.loai == LoaiGiaoDich.thuNhap,
-                              orElse: () => widget.danhSachDanhMuc.first,
-                            );
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: _loaiDangChon == LoaiGiaoDich.thuNhap ? MauSac.surface : Colors.transparent,
-                            borderRadius: BorderRadius.circular(6),
-                            boxShadow: _loaiDangChon == LoaiGiaoDich.thuNhap ? [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              )
-                            ] : null,
-                          ),
-                          child: Text(
-                            'Thu nhập',
-                            style: GoogleFonts.manrope(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: _loaiDangChon == LoaiGiaoDich.thuNhap ? MauSac.primary : MauSac.onSurfaceVariant,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                setState(() {
+                                  _loaiDangChon = LoaiGiaoDich.chiTieu;
+                                  _danhMucDangChon = widget.danhSachDanhMuc.firstWhere(
+                                    (d) => d.loai == LoaiGiaoDich.chiTieu,
+                                    orElse: () => widget.danhSachDanhMuc.first,
+                                  );
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                child: Center(
+                                  child: Text(
+                                    'Chi tiêu',
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: _loaiDangChon == LoaiGiaoDich.chiTieu ? MauSac.primary : MauSac.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                          Expanded(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                setState(() {
+                                  _loaiDangChon = LoaiGiaoDich.thuNhap;
+                                  _danhMucDangChon = widget.danhSachDanhMuc.firstWhere(
+                                    (d) => d.loai == LoaiGiaoDich.thuNhap,
+                                    orElse: () => widget.danhSachDanhMuc.first,
+                                  );
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                child: Center(
+                                  child: Text(
+                                    'Thu nhập',
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: _loaiDangChon == LoaiGiaoDich.thuNhap ? MauSac.primary : MauSac.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -419,6 +435,8 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
                 DropdownButtonFormField<ViTien>(
                   initialValue: _viDangChon,
                   isExpanded: true,
+                  borderRadius: BorderRadius.circular(16),
+                  dropdownColor: const Color(0xFFF8FAFC),
                   icon: const Icon(Icons.keyboard_arrow_down, color: MauSac.onSurfaceVariant),
                   decoration: InputDecoration(
                     filled: true,
@@ -649,63 +667,76 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
                 color: MauSac.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        _pageController.animateToPage(0, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: _isManualTab ? MauSac.surface : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: _isManualTab
-                              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
-                              : [],
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Thủ công',
-                          style: GoogleFonts.manrope(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: _isManualTab ? MauSac.primary : MauSac.onSurfaceVariant,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: AnimatedAlign(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeInOutCubic,
+                        alignment: _isManualTab ? Alignment.centerLeft : Alignment.centerRight,
+                        child: FractionallySizedBox(
+                          widthFactor: 0.5,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: MauSac.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        _pageController.animateToPage(1, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: !_isManualTab ? MauSac.surface : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: !_isManualTab
-                              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
-                              : [],
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Trợ lý AI',
-                          style: GoogleFonts.manrope(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: !_isManualTab ? MauSac.primary : MauSac.onSurfaceVariant,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              _pageController.animateToPage(0, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Center(
+                                child: Text(
+                                  'Thủ công',
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: _isManualTab ? MauSac.primary : MauSac.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              _pageController.animateToPage(1, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Center(
+                                child: Text(
+                                  'Trợ lý AI',
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: !_isManualTab ? MauSac.primary : MauSac.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
           ),
           
           // Content

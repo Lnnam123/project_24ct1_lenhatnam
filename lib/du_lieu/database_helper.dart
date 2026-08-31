@@ -10,6 +10,20 @@ class DatabaseHelper {
   DatabaseHelper._init();
 
   // --- Auth Methods ---
+  Future<bool> checkEmailExists(String email) async {
+    try {
+      final response = await _supabase
+          .from('users')
+          .select('email')
+          .eq('email', email)
+          .maybeSingle();
+      return response != null;
+    } catch (e) {
+      debugPrint('Lỗi check email: $e');
+      return false;
+    }
+  }
+
   Future<NguoiDung?> login(String email, String password) async {
     try {
       final response = await _supabase
@@ -56,6 +70,19 @@ class DatabaseHelper {
       return true;
     } catch (e) {
       debugPrint('Lỗi đổi mật khẩu: $e');
+      return false;
+    }
+  }
+
+  Future<bool> resetPassword(String email, String newPassword) async {
+    try {
+      await _supabase
+          .from('users')
+          .update({'password_hash': newPassword})
+          .eq('email', email);
+      return true;
+    } catch (e) {
+      debugPrint('Lỗi đặt lại mật khẩu: $e');
       return false;
     }
   }
@@ -209,12 +236,53 @@ class DatabaseHelper {
   }
 
   Future<List<ThongBao>> getNotifications(int userId) async {
-    return [
-      ThongBao(id: 1, tieuDe: 'Chào mừng!', noiDung: 'Chào mừng bạn đến với Cointap.', loai: 'SYSTEM', daDoc: false, ngayTao: DateTime.now())
-    ];
+    try {
+      final response = await _supabase
+          .from('notifications')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      return (response as List).map((m) {
+        return ThongBao(
+          id: m['notification_id'],
+          tieuDe: m['title'],
+          noiDung: m['content'],
+          loai: m['type'],
+          daDoc: m['is_read'] ?? false,
+          ngayTao: m['created_at'] != null ? DateTime.parse(m['created_at']) : DateTime.now(),
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('Lỗi getNotifications: $e');
+      return [];
+    }
   }
 
-  Future<void> markNotificationAsRead(int notificationId) async {}
+  Future<void> markNotificationAsRead(int notificationId) async {
+    try {
+      await _supabase.from('notifications').update({'is_read': true}).eq('notification_id', notificationId);
+    } catch (e) {
+      debugPrint('Lỗi markNotificationAsRead: $e');
+    }
+  }
+
+  Future<void> insertNotification(int userId, String title, String content, String type, {DateTime? createdAt}) async {
+    try {
+      final Map<String, dynamic> data = {
+        'user_id': userId,
+        'title': title,
+        'content': content,
+        'type': type,
+      };
+      if (createdAt != null) {
+        data['created_at'] = createdAt.toIso8601String();
+      }
+      await _supabase.from('notifications').insert(data);
+    } catch (e) {
+      debugPrint('Lỗi insertNotification: $e');
+    }
+  }
 
   Future<List<GiaoDich>> getTransactions(int userId, List<ViTien> wallets, List<DanhMuc> categories) async {
     try {

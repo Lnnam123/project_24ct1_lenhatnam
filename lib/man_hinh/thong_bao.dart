@@ -53,6 +53,26 @@ class _ManHinhThongBaoState extends State<ManHinhThongBao> {
     }
   }
 
+  String _thoiGianTuongDoi(DateTime time) {
+    final now = DateTime.now();
+    final difference = now.difference(time);
+    if (difference.inDays >= 365) {
+      return DateFormat('dd/MM/yyyy').format(time);
+    } else if (difference.inDays >= 30) {
+      int months = difference.inDays ~/ 30;
+      return '$months tháng trước';
+    } else if (difference.inDays >= 1) {
+      if (difference.inDays == 1) return 'Hôm qua';
+      return '${difference.inDays} ngày trước';
+    } else if (difference.inHours >= 1) {
+      return '${difference.inHours} giờ trước';
+    } else if (difference.inMinutes >= 1) {
+      return '${difference.inMinutes} phút trước';
+    } else {
+      return 'Vừa xong';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -149,7 +169,7 @@ class _ManHinhThongBaoState extends State<ManHinhThongBao> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                DateFormat('dd/MM/yyyy HH:mm').format(tb.ngayTao),
+                                _thoiGianTuongDoi(tb.ngayTao),
                                 style: GoogleFonts.manrope(
                                   fontSize: 12,
                                   color: MauSac.onSurfaceVariant.withValues(alpha: 0.7),

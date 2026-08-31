@@ -5,16 +5,21 @@ import '../mo_hinh/du_lieu.dart';
 import '../chu_de/mau_sac.dart';
 import '../dich_vu/time_service.dart';
 import 'chi_tiet_giao_dich.dart';
+import '../thanh_phan/skeleton_loading.dart';
 
 class ManHinhPhanTich extends StatefulWidget {
   final List<GiaoDich> danhSachGiaoDich;
   final VoidCallback onTapThongBao;
+  final bool coThongBaoChuaDoc;
+  final Future<void> Function() onRefresh;
   final Function(GiaoDich)? moSuaGiaoDich;
 
   const ManHinhPhanTich({
     super.key, 
     required this.danhSachGiaoDich, 
-    required this.onTapThongBao, 
+    required this.onTapThongBao,
+    required this.coThongBaoChuaDoc, 
+    required this.onRefresh,
     this.moSuaGiaoDich
   });
 
@@ -110,10 +115,7 @@ class _ManHinhPhanTichState extends State<ManHinhPhanTich> {
   @override
   Widget build(BuildContext context) {
     if (_isLoadingTime) {
-      return const Scaffold(
-        backgroundColor: MauSac.background,
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const PhanTichSkeleton();
     }
 
     return Scaffold(
@@ -155,14 +157,18 @@ class _ManHinhPhanTichState extends State<ManHinhPhanTich> {
         .where((tx) => tx.loai == LoaiGiaoDich.thuNhap)
         .fold(0.0, (sum, tx) => sum + tx.soTien);
 
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          _buildSummaryCard(kyHienTai, tongChiTieu, tongThuNhap, giaoDich),
-          if (kyHienTai != 'Hàng năm') _buildCalendarSection(kyHienTai, giaoDich),
-          _buildTopCategories(giaoDich),
-          const SizedBox(height: 80),
-        ],
+    return RefreshIndicator(
+      onRefresh: widget.onRefresh,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            _buildSummaryCard(kyHienTai, tongChiTieu, tongThuNhap, giaoDich),
+            if (kyHienTai != 'Hàng năm') _buildCalendarSection(kyHienTai, giaoDich),
+            _buildTopCategories(giaoDich),
+            const SizedBox(height: 80),
+          ],
+        ),
       ),
     );
   }
@@ -170,15 +176,47 @@ class _ManHinhPhanTichState extends State<ManHinhPhanTich> {
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Center(
-        child: Text(
-          'Phân tích',
-          style: GoogleFonts.manrope(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: MauSac.onSurface,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Center(
+            child: Text(
+              'Phân tích',
+              style: GoogleFonts.manrope(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: MauSac.onSurface,
+              ),
+            ),
           ),
-        ),
+          Positioned(
+            right: 0,
+            child: IconButton(
+              icon: Stack(
+                children: [
+                  const Icon(
+                    Icons.notifications_outlined,
+                    color: MauSac.onSurface,
+                  ),
+                  if (widget.coThongBaoChuaDoc)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: MauSac.error,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              onPressed: widget.onTapThongBao,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -606,7 +644,7 @@ class _ManHinhPhanTichState extends State<ManHinhPhanTich> {
       child: Row(
         children: List.generate(7, (index) {
           final date = startOfWeek.add(Duration(days: index));
-          final isToday = date.isAtSameMomentAs(DateTime(_homNay.year, _homNay.month, _homNay.day));
+          final isToday = date.year == _homNay.year && date.month == _homNay.month && date.day == _homNay.day;
           final weekday = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'][index];
           
           return GestureDetector(
@@ -862,14 +900,12 @@ class _ManHinhPhanTichState extends State<ManHinhPhanTich> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            ClipRRect(
+                            LinearProgressIndicator(
+                              value: percent,
+                              minHeight: 8,
                               borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: percent,
-                                minHeight: 8,
-                                backgroundColor: MauSac.surfaceContainerHigh,
-                                valueColor: AlwaysStoppedAnimation<Color>(dm.mauSac),
-                              ),
+                              backgroundColor: MauSac.surfaceContainerHigh,
+                              valueColor: AlwaysStoppedAnimation<Color>(dm.mauSac),
                             ),
                           ],
                         ),
@@ -879,7 +915,7 @@ class _ManHinhPhanTichState extends State<ManHinhPhanTich> {
                         _dinhDangTienDayDu(entry.value),
                         style: GoogleFonts.manrope(
                           fontWeight: FontWeight.w600,
-                          color: MauSac.onSurface,
+                          color: MauSac.error,
                         ),
                       ),
                     ],

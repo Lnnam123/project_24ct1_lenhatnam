@@ -13,6 +13,7 @@ import 'thanh_phan/modal_them_giao_dich.dart';
 import 'thanh_phan/skeleton_loading.dart';
 import 'thanh_phan/modal_quan_ly_vi_tien.dart';
 import 'du_lieu/database_helper.dart';
+import 'dich_vu/update_service.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'man_hinh/dang_nhap_nhanh.dart';
@@ -83,6 +84,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
   void initState() {
     super.initState();
     _taiDuLieuTuDatabase();
+    
+    // Tự động kiểm tra cập nhật khi mở app
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateService.kiemTraCapNhat(context);
+    });
   }
 
   Future<void> _taiDuLieuTuDatabase() async {

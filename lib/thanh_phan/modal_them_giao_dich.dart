@@ -715,7 +715,17 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onTap: () {
-                              _pageController.animateToPage(1, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Tính năng đang phát triển', style: GoogleFonts.manrope()),
+                                  backgroundColor: MauSac.primary,
+                                  behavior: SnackBarBehavior.floating,
+                                  margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              );
                             },
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -742,6 +752,7 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
           // Content
           Expanded(
             child: PageView(
+              physics: const NeverScrollableScrollPhysics(),
               controller: _pageController,
               onPageChanged: (index) {
                 setState(() => _isManualTab = index == 0);

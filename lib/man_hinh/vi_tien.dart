@@ -32,7 +32,7 @@ class ManHinhViTien extends StatefulWidget {
 
 class _ManHinhViTienState extends State<ManHinhViTien> {
   String _boloc = 'Tất cả';
-  final Set<int> _viTienAnSoDu = {};
+  final Set<int> _viTienHienSoDu = {};
 
   String _dinhDangTien(double soTien) {
     final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: '₫', decimalDigits: 0);
@@ -121,7 +121,7 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
                 separatorBuilder: (ctx, i) => const SizedBox(width: 12),
                 itemBuilder: (ctx, index) {
                   final vi = widget.danhSachVi[index];
-                  final isHidden = _viTienAnSoDu.contains(vi.id);
+                  final isHidden = !_viTienHienSoDu.contains(vi.id);
                   return GestureDetector(
                     onTap: () => widget.moQuanLyViTien(vi),
                     child: Container(
@@ -192,9 +192,9 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
                                     onTap: () {
                                       setState(() {
                                         if (isHidden) {
-                                          _viTienAnSoDu.remove(vi.id);
+                                          _viTienHienSoDu.add(vi.id);
                                         } else {
-                                          _viTienAnSoDu.add(vi.id);
+                                          _viTienHienSoDu.remove(vi.id);
                                         }
                                       });
                                     },
@@ -244,74 +244,112 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
             const SizedBox(height: 12),
 
             // Transactions List
-            giaoDichDaLoc.isEmpty
-                ? Padding(
+            Builder(
+              builder: (context) {
+                if (giaoDichDaLoc.isEmpty) {
+                  return Padding(
                     padding: const EdgeInsets.all(30),
                     child: Center(
                       child: Text('Không tìm thấy giao dịch', style: GoogleFonts.manrope()),
                     ),
-                  )
-                : ListView.separated(
+                  );
+                }
+                
+                final Map<String, List<GiaoDich>> groups = {};
+                for (var tx in giaoDichDaLoc) {
+                  final monthStr = 'Tháng ${tx.ngay.month}/${tx.ngay.year}';
+                  if (!groups.containsKey(monthStr)) {
+                    groups[monthStr] = [];
+                  }
+                  groups[monthStr]!.add(tx);
+                }
+                
+                final List<dynamic> listItems = [];
+                for (var entry in groups.entries) {
+                  listItems.add(entry.key);
+                  listItems.addAll(entry.value);
+                }
+                
+                return ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: giaoDichDaLoc.length,
-                    separatorBuilder: (ctx, i) => const SizedBox(height: 10),
+                    itemCount: listItems.length,
                     itemBuilder: (ctx, index) {
-                      final item = giaoDichDaLoc[index];
-                      final isExpense = item.loai == LoaiGiaoDich.chiTieu;
-                      return InkWell(
-                        onTap: () => widget.moSuaGiaoDich?.call(item),
-                        borderRadius: BorderRadius.circular(14),
-                        child: Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: MauSac.surface,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: MauSac.borderSubtle),
+                      final item = listItems[index];
+                      if (item is String) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 16, bottom: 12),
+                          child: Text(
+                            item,
+                            style: GoogleFonts.manrope(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: MauSac.onSurfaceVariant,
+                            ),
                           ),
-                          child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor: item.danhMuc.mauSac.withValues(alpha: 0.15),
-                              child: Icon(item.danhMuc.icon, color: item.danhMuc.mauSac, size: 20),
+                        );
+                      }
+                      
+                      final txItem = item as GiaoDich;
+                      final isExpense = txItem.loai == LoaiGiaoDich.chiTieu;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: InkWell(
+                          onTap: () => widget.moSuaGiaoDich?.call(txItem),
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: MauSac.surface,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: MauSac.borderSubtle),
                             ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.tieuDe,
-                                    style: GoogleFonts.manrope(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${DateFormat('dd/MM/yyyy HH:mm').format(item.ngay)} • ${item.viTien.tenVi}',
-                                    style: GoogleFonts.manrope(
-                                      fontSize: 12,
-                                      color: MauSac.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
+                            child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 20,
+                                backgroundColor: txItem.danhMuc.mauSac.withOpacity(0.15),
+                                child: Icon(txItem.danhMuc.icon, color: txItem.danhMuc.mauSac, size: 20),
                               ),
-                            ),
-                            Text(
-                              '${isExpense ? '-' : '+'}${_dinhDangTien(item.soTien)}',
-                              style: GoogleFonts.manrope(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                                color: isExpense ? MauSac.error : MauSac.success,
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      txItem.tieuDe,
+                                      style: GoogleFonts.manrope(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${DateFormat('HH:mm - dd/MM').format(txItem.ngay)} • ${txItem.viTien.tenVi}',
+                                      style: GoogleFonts.manrope(
+                                        fontSize: 12,
+                                        color: MauSac.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ));
+                              Text(
+                                '${isExpense ? '-' : '+'}${_dinhDangTien(txItem.soTien)}',
+                                style: GoogleFonts.manrope(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: isExpense ? MauSac.error : MauSac.success,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )),
+                      );
                     },
-                  ),
+                  );
+              }
+            ),
             const SizedBox(height: 80),
           ],
         ),

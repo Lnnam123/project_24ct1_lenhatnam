@@ -14,6 +14,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'doi_mat_khau.dart';
 import '../dich_vu/update_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:local_auth/local_auth.dart';
 
 class ManHinhCaiDat extends StatefulWidget {
   final NguoiDung nguoiDung;
@@ -38,13 +39,38 @@ class ManHinhCaiDat extends StatefulWidget {
 }
 
 class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
-  bool _batKhieuUngDung = true;
+  bool _batKhieuUngDung = false;
   String _appVersion = 'Đang tải...';
+  final LocalAuthentication _auth = LocalAuthentication();
 
   @override
   void initState() {
     super.initState();
     _loadVersion();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _batKhieuUngDung = prefs.getBool('app_lock_enabled') ?? false;
+      });
+    }
+  }
+
+  void _hienThongBaoChuaPhatTrien() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Tính năng đang phát triển', style: GoogleFonts.manrope()),
+        backgroundColor: MauSac.primary,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
   }
 
   Future<void> _loadVersion() async {
@@ -202,13 +228,30 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
                 icon: Icons.language,
                 title: 'Ngôn ngữ',
                 trailingText: 'Tiếng Việt',
-                onTap: () {},
+                onTap: _hienThongBaoChuaPhatTrien,
               ),
               _buildSettingsItem(
                 icon: Icons.payments,
                 title: 'Tiền tệ',
                 trailingText: 'VNĐ',
-                onTap: () {},
+                onTap: _hienThongBaoChuaPhatTrien,
+              ),
+              _buildSettingsItem(
+                icon: Icons.smart_toy_outlined,
+                title: 'Trợ lí AI',
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Tính năng đang phát triển, vui lòng nhập thủ công', style: GoogleFonts.manrope()),
+                      backgroundColor: MauSac.primary,
+                      behavior: SnackBarBehavior.floating,
+                      margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  );
+                },
               ),
             ]),
             const SizedBox(height: 24),
@@ -218,14 +261,52 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
             _buildSettingsGroup([
               _buildSettingsItem(
                 icon: Icons.lock,
-                title: 'Khóa ứng dụng',
-                subtitle: 'FaceID / PIN',
+                title: 'Đăng nhập bằng sinh trắc học',
+                titleFontSize: 14,
+                subtitle: 'Vân tay / Khuôn mặt',
                 isToggle: true,
                 toggleValue: _batKhieuUngDung,
-                onToggle: (val) {
-                  setState(() {
-                    _batKhieuUngDung = val;
-                  });
+                onToggle: (val) async {
+                  if (val) {
+                    try {
+                      final canCheck = await _auth.canCheckBiometrics;
+                      final isDeviceSupported = await _auth.isDeviceSupported();
+                      if (!canCheck && !isDeviceSupported) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Thiết bị không hỗ trợ sinh trắc học')),
+                          );
+                        }
+                        return;
+                      }
+                      
+                      final authenticated = await _auth.authenticate(
+                        localizedReason: 'Xác thực để bật Khóa ứng dụng',
+                        persistAcrossBackgrounding: true,
+                        biometricOnly: false,
+                      );
+                      
+                      if (authenticated) {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setBool('app_lock_enabled', true);
+                        if (mounted) {
+                          setState(() {
+                            _batKhieuUngDung = true;
+                          });
+                        }
+                      }
+                    } catch (e) {
+                      debugPrint('Lỗi bật sinh trắc: $e');
+                    }
+                  } else {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setBool('app_lock_enabled', false);
+                    if (mounted) {
+                      setState(() {
+                        _batKhieuUngDung = false;
+                      });
+                    }
+                  }
                 },
               ),
             ]),
@@ -237,12 +318,12 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
               _buildSettingsItem(
                 icon: Icons.help,
                 title: 'Trung tâm trợ giúp',
-                onTap: () {},
+                onTap: _hienThongBaoChuaPhatTrien,
               ),
               _buildSettingsItem(
                 icon: Icons.description,
                 title: 'Điều khoản sử dụng',
-                onTap: () {},
+                onTap: _hienThongBaoChuaPhatTrien,
               ),
               _buildSettingsItem(
                 icon: Icons.system_update,
@@ -363,6 +444,7 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
   Widget _buildSettingsItem({
     required IconData icon,
     required String title,
+    double titleFontSize = 16,
     String? subtitle,
     String? trailingText,
     bool showChevron = true,
@@ -395,7 +477,7 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
                   Text(
                     title,
                     style: GoogleFonts.manrope(
-                      fontSize: 16,
+                      fontSize: titleFontSize,
                       fontWeight: FontWeight.w500,
                       color: MauSac.onSurface,
                     ),

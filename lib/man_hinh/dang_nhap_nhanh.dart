@@ -41,6 +41,18 @@ class _ManHinhDangNhapNhanhState extends State<ManHinhDangNhapNhanh> {
 
   Future<void> _checkBiometrics() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final isAppLockEnabled = prefs.getBool('app_lock_enabled') ?? false;
+
+      if (!isAppLockEnabled) {
+        if (mounted) {
+          setState(() {
+            _canCheckBiometrics = false;
+          });
+        }
+        return;
+      }
+
       final canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
       final canAuthenticate = canAuthenticateWithBiometrics || await _auth.isDeviceSupported();
       if (mounted) {

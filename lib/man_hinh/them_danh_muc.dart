@@ -71,6 +71,11 @@ class _ManHinhThemDanhMucState extends State<ManHinhThemDanhMuc> {
         SnackBar(
           content: Text('Vui lòng nhập tên danh mục', style: GoogleFonts.manrope()),
           backgroundColor: MauSac.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
       return;

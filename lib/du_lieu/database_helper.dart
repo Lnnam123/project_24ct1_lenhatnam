@@ -329,6 +329,13 @@ class DatabaseHelper {
           .order('created_at', ascending: false);
           
       if (response.isNotEmpty) {
+        // Lấy tất cả giao dịch chi tiêu để tự động tính daChi
+        final txResponse = await _supabase
+            .from('transactions')
+            .select()
+            .eq('user_id', userId)
+            .eq('type', 'EXPENSE');
+
         return response.map<NganSach>((m) {
           DanhMuc? category;
           if (m['category_id'] != null) {
@@ -339,12 +346,30 @@ class DatabaseHelper {
             }
           }
           
+          final startDate = m['start_date'] != null ? DateTime.parse(m['start_date']) : DateTime.now();
+          final endDate = m['end_date'] != null ? DateTime.parse(m['end_date']) : DateTime.now().add(const Duration(days: 30));
+          
+          double totalSpent = 0;
+          for (var tx in txResponse) {
+             final txDate = DateTime.parse(tx['transaction_date']);
+             // Bao gồm cả ngày cuối cùng bằng cách so sánh Date
+             final txDay = DateTime(txDate.year, txDate.month, txDate.day);
+             final startDay = DateTime(startDate.year, startDate.month, startDate.day);
+             final endDay = DateTime(endDate.year, endDate.month, endDate.day);
+             
+             if (!txDay.isBefore(startDay) && !txDay.isAfter(endDay)) {
+               if (category == null || category.id == tx['category_id']) {
+                  totalSpent += double.tryParse(tx['amount']?.toString() ?? '0') ?? 0.0;
+               }
+             }
+          }
+
           return NganSach(
             id: m['budget_id'],
             hanMuc: double.tryParse(m['amount']?.toString() ?? '0') ?? 0.0,
-            daChi: 0, // daChi will be calculated in main.dart
-            ngayBatDau: m['start_date'] != null ? DateTime.parse(m['start_date']) : DateTime.now(),
-            ngayKetThuc: m['end_date'] != null ? DateTime.parse(m['end_date']) : DateTime.now().add(const Duration(days: 30)),
+            daChi: totalSpent,
+            ngayBatDau: startDate,
+            ngayKetThuc: endDate,
             danhMuc: category,
           );
         }).toList();
@@ -501,6 +526,13 @@ class DatabaseHelper {
       case 'account_balance_wallet': return Icons.account_balance_wallet;
       case 'credit_card': return Icons.credit_card;
       case 'savings': return Icons.savings;
+      case 'health_and_safety': return Icons.health_and_safety;
+      case 'home': return Icons.home;
+      case 'school': return Icons.school;
+      case 'flight': return Icons.flight;
+      case 'sports_esports': return Icons.sports_esports;
+      case 'trending_up': return Icons.trending_up;
+      case 'receipt_long': return Icons.receipt_long;
       default: return Icons.category;
     }
   }

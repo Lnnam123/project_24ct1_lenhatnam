@@ -120,23 +120,6 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
     final notifications = await db.getNotifications(widget.nguoiDung.id);
     final hasUnread = notifications.any((n) => !n.daDoc);
 
-    // Tính tổng chi tiêu cho từng ngân sách trong danh sách
-    for (var budget in budgets) {
-      double totalSpent = 0;
-      for (var tx in transactions) {
-        if (tx.loai == LoaiGiaoDich.chiTieu &&
-            (tx.ngay.isAfter(budget.ngayBatDau) ||
-                tx.ngay.isAtSameMomentAs(budget.ngayBatDau)) &&
-            (tx.ngay.isBefore(budget.ngayKetThuc) ||
-                tx.ngay.isAtSameMomentAs(budget.ngayKetThuc))) {
-          // Nếu ngân sách có giới hạn danh mục, kiểm tra danh mục
-          if (budget.danhMuc == null || budget.danhMuc!.id == tx.danhMuc.id) {
-            totalSpent += tx.soTien;
-          }
-        }
-      }
-      budget.daChi = totalSpent;
-    }
 
     if (mounted) {
       setState(() {
@@ -147,6 +130,44 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
         _coThongBaoChuaDoc = hasUnread;
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _kiemTraVaCanhBaoNganSach() async {
+    final notifications = await DatabaseHelper.instance.getNotifications(widget.nguoiDung.id);
+    final now = DateTime.now();
+    bool hasNewNotification = false;
+
+    for (var budget in _danhSachNganSach) {
+      if (budget.hanMuc > 0 && budget.daChi > budget.hanMuc) {
+        final title = 'Vượt ngân sách: ${budget.danhMuc?.ten ?? "Tổng quát"}';
+        
+        // Kiểm tra xem đã có thông báo nào cùng tiêu đề trong vòng 1 tháng gần đây chưa
+        final hasNotified = notifications.any((n) {
+          return n.tieuDe == title && 
+                 n.ngayTao.year == now.year && 
+                 n.ngayTao.month == now.month;
+        });
+
+        if (!hasNotified) {
+          await DatabaseHelper.instance.insertNotification(
+            widget.nguoiDung.id,
+            title,
+            'Bạn đã chi tiêu vượt quá hạn mức ngân sách ${budget.danhMuc?.ten ?? "tổng quát"} trong tháng này.',
+            'WARNING',
+          );
+          hasNewNotification = true;
+        }
+      }
+    }
+
+    if (hasNewNotification) {
+      final updatedNotifs = await DatabaseHelper.instance.getNotifications(widget.nguoiDung.id);
+      if (mounted) {
+        setState(() {
+          _coThongBaoChuaDoc = updatedNotifs.any((n) => !n.daDoc);
+        });
+      }
     }
   }
 
@@ -198,6 +219,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
       SnackBar(
         content: Text('Đã xóa ngân sách!', style: GoogleFonts.manrope()),
         backgroundColor: MauSac.success,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }
@@ -208,6 +234,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
       widget.nguoiDung.id,
     );
     await _taiDuLieuTuDatabase();
+    await _kiemTraVaCanhBaoNganSach();
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -217,6 +244,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
           style: GoogleFonts.manrope(),
         ),
         backgroundColor: MauSac.success,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }
@@ -224,6 +256,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
   void _suaGiaoDich(GiaoDich giaoDich) async {
     await DatabaseHelper.instance.updateTransaction(giaoDich);
     await _taiDuLieuTuDatabase();
+    await _kiemTraVaCanhBaoNganSach();
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -233,6 +266,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
           style: GoogleFonts.manrope(),
         ),
         backgroundColor: MauSac.success,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }
@@ -246,6 +284,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
       SnackBar(
         content: Text('Đã xóa giao dịch!', style: GoogleFonts.manrope()),
         backgroundColor: MauSac.success,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }
@@ -253,8 +296,14 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
   void _moModalThemGiaoDich() {
     if (_danhSachVi.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Bạn cần tạo ít nhất 1 tài khoản/ví để giao dịch'),
+        SnackBar(
+          content: Text('Bạn cần tạo ít nhất 1 tài khoản/ví để giao dịch', style: GoogleFonts.manrope()),
+          backgroundColor: MauSac.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
       return;
@@ -303,6 +352,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
           style: GoogleFonts.manrope(),
         ),
         backgroundColor: MauSac.success,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }
@@ -319,6 +373,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
           style: GoogleFonts.manrope(),
         ),
         backgroundColor: MauSac.success,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }
@@ -335,6 +394,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
           style: GoogleFonts.manrope(),
         ),
         backgroundColor: MauSac.success,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }
@@ -351,6 +415,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
           style: GoogleFonts.manrope(),
         ),
         backgroundColor: MauSac.success,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }
@@ -383,6 +452,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
           style: GoogleFonts.manrope(),
         ),
         backgroundColor: MauSac.success,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }
@@ -399,6 +473,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
           style: GoogleFonts.manrope(),
         ),
         backgroundColor: MauSac.success,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }
@@ -415,6 +494,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
           style: GoogleFonts.manrope(),
         ),
         backgroundColor: MauSac.success,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }

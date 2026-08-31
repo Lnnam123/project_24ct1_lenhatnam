@@ -123,18 +123,18 @@ class DanhMuc {
   });
 
   String get iconName {
-    if (icon == Icons.shopping_cart) return 'shopping_cart';
-    if (icon == Icons.restaurant) return 'restaurant';
-    if (icon == Icons.directions_car) return 'directions_car';
-    if (icon == Icons.health_and_safety) return 'health_and_safety';
-    if (icon == Icons.movie) return 'movie';
-    if (icon == Icons.home) return 'home';
-    if (icon == Icons.school) return 'school';
-    if (icon == Icons.flight) return 'flight';
-    if (icon == Icons.payments) return 'payments';
-    if (icon == Icons.trending_up) return 'trending_up';
-    if (icon == Icons.sports_esports) return 'sports_esports';
-    if (icon == Icons.receipt_long) return 'receipt_long';
+    if (icon.codePoint == Icons.shopping_cart.codePoint) return 'shopping_cart';
+    if (icon.codePoint == Icons.restaurant.codePoint) return 'restaurant';
+    if (icon.codePoint == Icons.directions_car.codePoint) return 'directions_car';
+    if (icon.codePoint == Icons.health_and_safety.codePoint) return 'health_and_safety';
+    if (icon.codePoint == Icons.movie.codePoint) return 'movie';
+    if (icon.codePoint == Icons.home.codePoint) return 'home';
+    if (icon.codePoint == Icons.school.codePoint) return 'school';
+    if (icon.codePoint == Icons.flight.codePoint) return 'flight';
+    if (icon.codePoint == Icons.payments.codePoint) return 'payments';
+    if (icon.codePoint == Icons.trending_up.codePoint) return 'trending_up';
+    if (icon.codePoint == Icons.sports_esports.codePoint) return 'sports_esports';
+    if (icon.codePoint == Icons.receipt_long.codePoint) return 'receipt_long';
     return 'category';
   }
 

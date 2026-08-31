@@ -47,7 +47,7 @@ class ManHinhTongQuan extends StatefulWidget {
 }
 
 class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
-  bool _anSoDu = false;
+  bool _anSoDu = true;
   
   double get tongSoDu => widget.danhSachVi.fold(0, (sum, v) => sum + v.soDu);
 
@@ -69,6 +69,110 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
           danhSachDanhMuc: widget.danhSachDanhMuc,
           onCapNhatNganSach: widget.onCapNhatNganSach,
           onXoaNganSach: widget.onXoaNganSach,
+        ),
+      ),
+    );
+  }
+
+  void _xemChiTietVuotNganSach() {
+    final overBudgets = widget.danhSachNganSach.where((b) => b.hanMuc > 0 && b.daChi > b.hanMuc).toList();
+    if (overBudgets.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: MauSac.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Ngân sách vượt hạn mức',
+                  style: GoogleFonts.manrope(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: MauSac.onSurface,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close, color: MauSac.onSurfaceVariant),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ...overBudgets.map((b) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: MauSac.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: MauSac.borderSubtle),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: (b.danhMuc?.mauSac ?? MauSac.primary).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        b.danhMuc?.icon ?? Icons.category,
+                        color: b.danhMuc?.mauSac ?? MauSac.primary,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            b.danhMuc?.ten ?? 'Tổng quát',
+                            style: GoogleFonts.manrope(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: MauSac.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Đã chi: ${_dinhDangTien(b.daChi)} / ${_dinhDangTien(b.hanMuc)}',
+                            style: GoogleFonts.manrope(
+                              color: MauSac.error,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Vượt quá: ${_dinhDangTien(b.daChi - b.hanMuc)}',
+                            style: GoogleFonts.manrope(
+                              color: MauSac.error,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+            const SizedBox(height: 24),
+          ],
         ),
       ),
     );
@@ -272,10 +376,22 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                         ),
                         elevation: 0,
                       ),
-                      onPressed: widget.moThemGiaoDich,
-                      icon: const Icon(Icons.add_a_photo_outlined, size: 20),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Tính năng đang phát triển', style: GoogleFonts.manrope()),
+                            backgroundColor: MauSac.primary,
+                            behavior: SnackBarBehavior.floating,
+                            margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.document_scanner_outlined, size: 20),
                       label: Text(
-                        'AI / Camera',
+                        'Quét hoá đơn',
                         style: GoogleFonts.manrope(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -310,6 +426,50 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                 ],
               ),
               const SizedBox(height: 24),
+
+              // Cảnh báo vượt ngân sách
+              if (widget.danhSachNganSach.any((b) => b.hanMuc > 0 && b.daChi > b.hanMuc))
+                GestureDetector(
+                  onTap: _xemChiTietVuotNganSach,
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: MauSac.error.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: MauSac.error.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: MauSac.error, size: 28),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Cảnh báo vượt ngân sách!',
+                                style: GoogleFonts.manrope(
+                                  fontWeight: FontWeight.bold,
+                                  color: MauSac.error,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Bạn đã chi tiêu vượt quá hạn mức của ${widget.danhSachNganSach.where((b) => b.hanMuc > 0 && b.daChi > b.hanMuc).length} ngân sách. Nhấn để xem chi tiết.',
+                                style: GoogleFonts.manrope(
+                                  color: MauSac.onSurfaceVariant,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
               // Recent Transactions Header
               Row(
@@ -394,7 +554,7 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        '${DateFormat('dd/MM, HH:mm').format(item.ngay)} • ${item.viTien.tenVi}',
+                                        '${DateFormat('HH:mm - dd/MM').format(item.ngay)} • ${item.viTien.tenVi}',
                                         style: GoogleFonts.manrope(
                                           fontSize: 12,
                                           color: MauSac.onSurfaceVariant,

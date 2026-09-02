@@ -38,23 +38,35 @@ appandroid/
 ├── lib/                       # Mã nguồn chính của ứng dụng
 │   ├── chu_de/                # Chứa các file quy định màu sắc, theme
 │   │   └── mau_sac.dart
-│   ├── dich_vu/               # Các dịch vụ bên ngoài (Ví dụ: kiểm tra API OTA Update)
+│   ├── dich_vu/               # Các dịch vụ bên ngoài (Ví dụ: OTA Update, Email, Notification)
+│   │   ├── email_service.dart
+│   │   ├── notification_service.dart
+│   │   ├── time_service.dart
 │   │   └── update_service.dart
 │   ├── du_lieu/               # Các hàm tương tác với CSDL Supabase
 │   │   └── database_helper.dart
 │   ├── man_hinh/              # Các giao diện màn hình chính
+│   │   ├── bao_cao.dart
 │   │   ├── cai_dat.dart
+│   │   ├── chi_tiet_giao_dich.dart
+│   │   ├── chi_tiet_phan_tich.dart
+│   │   ├── chi_tiet_thu_chi.dart
+│   │   ├── chi_tiet_vi.dart
 │   │   ├── dang_ky.dart
 │   │   ├── dang_nhap.dart
 │   │   ├── dang_nhap_nhanh.dart
+│   │   ├── dat_lai_mat_khau.dart
+│   │   ├── dieu_khoan.dart
 │   │   ├── doi_mat_khau.dart
-│   │   ├── phan_tich.dart
 │   │   ├── quan_ly_danh_muc.dart
+│   │   ├── quan_ly_ngan_sach.dart
+│   │   ├── quen_mat_khau.dart
 │   │   ├── them_danh_muc.dart
 │   │   ├── thong_bao.dart
 │   │   ├── thong_tin_ca_nhan.dart
 │   │   ├── tong_quan.dart
-│   │   └── vi_tien.dart
+│   │   ├── vi_tien.dart
+│   │   └── xac_thuc_otp.dart
 │   ├── mo_hinh/               # Các cấu trúc Model dữ liệu (NguoiDung, GiaoDich,...)
 │   │   └── du_lieu.dart
 │   ├── thanh_phan/            # Các UI Component có thể tái sử dụng (Dialog, BottomSheet)

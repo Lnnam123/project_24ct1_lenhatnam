@@ -54,7 +54,7 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Tài khoản & Ví tiền',
+          'Tài khoản',
           style: GoogleFonts.manrope(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -225,19 +225,44 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
                   'Lịch sử giao dịch',
                   style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                DropdownButton<String>(
-                  value: _boloc,
-                  underline: const SizedBox(),
-                  icon: const Icon(Icons.filter_list, size: 20),
-                  items: ['Tất cả', 'Thu nhập', 'Chi tiêu'].map((f) {
-                    return DropdownMenuItem<String>(
-                      value: f,
-                      child: Text(f, style: GoogleFonts.manrope(fontSize: 14)),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => _boloc = val);
-                  },
+                SizedBox(
+                  width: 105,
+                  child: DropdownButtonFormField<String>(
+                    value: _boloc,
+                    isExpanded: true,
+                    borderRadius: BorderRadius.circular(12),
+                    dropdownColor: const Color(0xFFF8FAFC),
+                    icon: const Icon(Icons.keyboard_arrow_down, color: MauSac.onSurfaceVariant),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: MauSac.borderSubtle),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: MauSac.borderSubtle),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    ),
+                    items: ['Tất cả', 'Thu nhập', 'Chi tiêu'].map((f) {
+                      return DropdownMenuItem<String>(
+                        value: f,
+                        child: Text(
+                          f,
+                          style: GoogleFonts.manrope(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: MauSac.onSurface,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) setState(() => _boloc = val);
+                    },
+                  ),
                 ),
               ],
             ),

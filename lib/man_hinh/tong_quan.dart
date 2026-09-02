@@ -5,8 +5,10 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../mo_hinh/du_lieu.dart';
 import '../chu_de/mau_sac.dart';
-//import '../thanh_phan/modal_ngan_sach.dart';
 import '../man_hinh/quan_ly_ngan_sach.dart';
+import '../man_hinh/chi_tiet_thu_chi.dart';
+import '../man_hinh/chi_tiet_phan_tich.dart';
+import '../man_hinh/chi_tiet_vi.dart';
 
 class ManHinhTongQuan extends StatefulWidget {
   final NguoiDung nguoiDung;
@@ -48,7 +50,15 @@ class ManHinhTongQuan extends StatefulWidget {
 
 class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
   bool _anSoDu = true;
-  
+  String _thoiGianChonPhanTich = 'Tháng này';
+  final List<String> _danhSachThoiGian = [
+    'Hôm nay',
+    'Tuần này',
+    'Tháng này',
+    'Quý này',
+    'Năm nay',
+  ];
+
   double get tongSoDu => widget.danhSachVi.fold(0, (sum, v) => sum + v.soDu);
 
   String _dinhDangTien(double soTien) {
@@ -74,114 +84,8 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
     );
   }
 
-  void _xemChiTietVuotNganSach() {
-    final overBudgets = widget.danhSachNganSach.where((b) => b.hanMuc > 0 && b.daChi > b.hanMuc).toList();
-    if (overBudgets.isEmpty) return;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: MauSac.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Ngân sách vượt hạn mức',
-                  style: GoogleFonts.manrope(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: MauSac.onSurface,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, color: MauSac.onSurfaceVariant),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            ...overBudgets.map((b) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: MauSac.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: MauSac.borderSubtle),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: (b.danhMuc?.mauSac ?? MauSac.primary).withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        b.danhMuc?.icon ?? Icons.category,
-                        color: b.danhMuc?.mauSac ?? MauSac.primary,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            b.danhMuc?.ten ?? 'Tổng quát',
-                            style: GoogleFonts.manrope(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: MauSac.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Đã chi: ${_dinhDangTien(b.daChi)} / ${_dinhDangTien(b.hanMuc)}',
-                            style: GoogleFonts.manrope(
-                              color: MauSac.error,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Vượt quá: ${_dinhDangTien(b.daChi - b.hanMuc)}',
-                            style: GoogleFonts.manrope(
-                              color: MauSac.error,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final giaoDichGanDay = widget.danhSachGiaoDich.take(5).toList();
-
     return Scaffold(
       backgroundColor: MauSac.background,
       appBar: AppBar(
@@ -189,7 +93,7 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Trang chủ',
+          'Tổng quan',
           style: GoogleFonts.manrope(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -234,7 +138,7 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
             children: [
               // Welcome message
               Text(
-                'Xin chào, ${widget.nguoiDung.hoTen}!',
+                'Xin chào, ${widget.nguoiDung.hoTen}',
                 style: GoogleFonts.manrope(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -300,285 +204,739 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    Builder(
-                      builder: (context) {
-                        final tongNganSach = widget.danhSachNganSach
-                            .fold<double>(0, (sum, ns) => sum + ns.hanMuc);
-                        final tongDaChi = widget.danhSachNganSach.fold<double>(
-                          0,
-                          (sum, ns) => sum + ns.daChi,
-                        );
-                        final phanTram = tongNganSach > 0
-                            ? (tongDaChi / tongNganSach * 100).clamp(0, 100)
-                            : 0.0;
-
-                        return Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  tongNganSach > 0
-                                      ? 'Đã chi: ${_dinhDangTien(tongDaChi)} / ${_dinhDangTien(tongNganSach)}'
-                                      : 'Chưa có ngân sách',
-                                  style: GoogleFonts.manrope(
-                                    fontSize: 12,
-                                    color: const Color(0xE6FFFFFF),
-                                  ),
-                                ),
-                                if (tongNganSach > 0)
-                                  Text(
-                                    '${phanTram.toStringAsFixed(0)}%',
-                                    style: GoogleFonts.manrope(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            if (tongNganSach > 0)
-                              LinearProgressIndicator(
-                                value: phanTram / 100,
-                                minHeight: 8,
-                                borderRadius: BorderRadius.circular(10),
-                                backgroundColor: Colors.white.withValues(
-                                  alpha: 0.2,
-                                ),
-                                valueColor:
-                                    const AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                              ),
-                          ],
-                        );
-                      },
-                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
-
-              // Quick Actions Bar
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: MauSac.surface,
-                        foregroundColor: MauSac.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          side: const BorderSide(color: MauSac.borderSubtle),
-                        ),
-                        elevation: 0,
-                      ),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Tính năng đang phát triển', style: GoogleFonts.manrope()),
-                            backgroundColor: MauSac.primary,
-                            behavior: SnackBarBehavior.floating,
-                            margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.document_scanner_outlined, size: 20),
-                      label: Text(
-                        'Quét hoá đơn',
-                        style: GoogleFonts.manrope(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: MauSac.surface,
-                        foregroundColor: MauSac.secondary,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          side: const BorderSide(color: MauSac.borderSubtle),
-                        ),
-                        elevation: 0,
-                      ),
-                      onPressed: _moManHinhNganSach,
-                      icon: const Icon(Icons.pie_chart_outline, size: 20),
-                      label: Text(
-                        'Ngân sách',
-                        style: GoogleFonts.manrope(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
               const SizedBox(height: 24),
 
-              // Cảnh báo vượt ngân sách
-              if (widget.danhSachNganSach.any((b) => b.hanMuc > 0 && b.daChi > b.hanMuc))
-                GestureDetector(
-                  onTap: _xemChiTietVuotNganSach,
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 24),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: MauSac.error.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: MauSac.error.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.warning_amber_rounded, color: MauSac.error, size: 28),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+              // Thu chi tháng này
+              Builder(
+                builder: (ctx) {
+                  final now = DateTime.now();
+                  final gdThangNay = widget.danhSachGiaoDich
+                      .where(
+                        (gd) =>
+                            gd.ngay.year == now.year &&
+                            gd.ngay.month == now.month,
+                      )
+                      .toList();
+                  final thu = gdThangNay
+                      .where((gd) => gd.loai == LoaiGiaoDich.thuNhap)
+                      .fold(0.0, (s, e) => s + e.soTien);
+                  final chi = gdThangNay
+                      .where((gd) => gd.loai == LoaiGiaoDich.chiTieu)
+                      .fold(0.0, (s, e) => s + e.soTien);
+
+                  final maxVal = (thu > chi ? thu : chi);
+                  final thuPercent = maxVal > 0 ? (thu / maxVal) : 0.0;
+                  final chiPercent = maxVal > 0 ? (chi / maxVal) : 0.0;
+
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ManHinhChiTietThuChi(
+                            danhSachGiaoDich: widget.danhSachGiaoDich,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: MauSac.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: MauSac.borderSubtle.withValues(alpha: 0.4),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Cảnh báo vượt ngân sách!',
+                                'Thu chi tháng này',
                                 style: GoogleFonts.manrope(
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: MauSac.error,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Bạn đã chi tiêu vượt quá hạn mức của ${widget.danhSachNganSach.where((b) => b.hanMuc > 0 && b.daChi > b.hanMuc).length} ngân sách. Nhấn để xem chi tiết.',
-                                style: GoogleFonts.manrope(
-                                  color: MauSac.onSurfaceVariant,
-                                  fontSize: 13,
+                                  color: MauSac.onSurface,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-              // Recent Transactions Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Giao dịch gần đây',
-                    style: GoogleFonts.manrope(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: MauSac.onSurface,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: widget.xemTatCaGiaoDich,
-                    child: Text(
-                      'Xem tất cả',
-                      style: GoogleFonts.manrope(
-                        color: MauSac.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Recent Transactions List
-              giaoDichGanDay.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Center(
-                        child: Text(
-                          'Chưa có giao dịch nào',
-                          style: GoogleFonts.manrope(),
-                        ),
-                      ),
-                    )
-                  : ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: giaoDichGanDay.length,
-                      separatorBuilder: (ctx, i) => const SizedBox(height: 10),
-                      itemBuilder: (ctx, index) {
-                        final item = giaoDichGanDay[index];
-                        final isExpense = item.loai == LoaiGiaoDich.chiTieu;
-                        return InkWell(
-                          onTap: () => widget.moSuaGiaoDich(item),
-                          borderRadius: BorderRadius.circular(14),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: MauSac.surface,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: MauSac.borderSubtle),
-                            ),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 20,
-                                  backgroundColor: item.danhMuc.mauSac
-                                      .withValues(alpha: 0.15),
-                                  child: Icon(
-                                    item.danhMuc.icon,
-                                    color: item.danhMuc.mauSac,
-                                    size: 20,
-                                  ),
+                          const SizedBox(height: 12),
+                          // Income
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Thu nhập',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: MauSac.onSurfaceVariant,
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item.tieuDe,
+                              ),
+                              Text(
+                                '+${_dinhDangTien(thu)}',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: MauSac.success,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          LinearProgressIndicator(
+                            value: thuPercent,
+                            minHeight: 8,
+                            borderRadius: BorderRadius.circular(4),
+                            backgroundColor: MauSac.surfaceContainer,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              MauSac.success,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Expense
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Chi tiêu',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: MauSac.onSurfaceVariant,
+                                ),
+                              ),
+                              Text(
+                                '-${_dinhDangTien(chi)}',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: MauSac.error,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          LinearProgressIndicator(
+                            value: chiPercent,
+                            minHeight: 8,
+                            borderRadius: BorderRadius.circular(4),
+                            backgroundColor: MauSac.surfaceContainer,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              MauSac.error,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Budget Progress Widget
+              Builder(
+                builder: (context) {
+                  final tongNganSach = widget.danhSachNganSach.fold<double>(
+                    0,
+                    (sum, ns) => sum + ns.hanMuc,
+                  );
+                  final tongDaChi = widget.danhSachNganSach.fold<double>(
+                    0,
+                    (sum, ns) => sum + ns.daChi,
+                  );
+                  final phanTram = tongNganSach > 0
+                      ? (tongDaChi / tongNganSach).clamp(0.0, 1.0)
+                      : 0.0;
+                  final conLai = tongNganSach > 0
+                      ? tongNganSach - tongDaChi
+                      : 0.0;
+
+                  return GestureDetector(
+                    onTap: _moManHinhNganSach,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: MauSac.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: MauSac.borderSubtle.withValues(alpha: 0.4),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Ngân sách',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: MauSac.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Đã chi tiêu',
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 14,
+                                      color: MauSac.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _dinhDangTien(tongDaChi),
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: MauSac.onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'Tổng ngân sách',
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 14,
+                                      color: MauSac.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _dinhDangTien(tongNganSach),
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: MauSac.onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          LinearProgressIndicator(
+                            value: phanTram,
+                            minHeight: 10,
+                            borderRadius: BorderRadius.circular(5),
+                            backgroundColor: MauSac.surfaceContainer,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              phanTram >= 1 ? MauSac.error : MauSac.warning,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                conLai >= 0
+                                    ? 'Còn lại ${_dinhDangTien(conLai)}'
+                                    : 'Vượt quá ${_dinhDangTien(-conLai)}',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 14,
+                                  color: MauSac.onSurfaceVariant,
+                                ),
+                              ),
+                              Text(
+                                '${(phanTram * 100).toStringAsFixed(0)}%',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 14,
+                                  color: MauSac.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Phân tích chi tiêu
+              Builder(
+                builder: (context) {
+                  final now = DateTime.now();
+                  final gdThangNay = widget.danhSachGiaoDich.where((gd) {
+                    if (gd.loai != LoaiGiaoDich.chiTieu) return false;
+                    switch (_thoiGianChonPhanTich) {
+                      case 'Hôm nay':
+                        return gd.ngay.year == now.year &&
+                            gd.ngay.month == now.month &&
+                            gd.ngay.day == now.day;
+                      case 'Tuần này':
+                        final startOfWeek = DateTime(
+                          now.year,
+                          now.month,
+                          now.day,
+                        ).subtract(Duration(days: now.weekday - 1));
+                        final endOfWeek = startOfWeek.add(
+                          const Duration(
+                            days: 6,
+                            hours: 23,
+                            minutes: 59,
+                            seconds: 59,
+                          ),
+                        );
+                        return gd.ngay.isAfter(
+                              startOfWeek.subtract(const Duration(days: 1)),
+                            ) &&
+                            gd.ngay.isBefore(
+                              endOfWeek.add(const Duration(days: 1)),
+                            );
+                      case 'Tháng này':
+                        return gd.ngay.year == now.year &&
+                            gd.ngay.month == now.month;
+                      case 'Quý này':
+                        final currentQuarter =
+                            ((now.month - 1) / 3).floor() + 1;
+                        final gdQuarter = ((gd.ngay.month - 1) / 3).floor() + 1;
+                        return gd.ngay.year == now.year &&
+                            gdQuarter == currentQuarter;
+                      case 'Năm nay':
+                        return gd.ngay.year == now.year;
+                      default:
+                        return true;
+                    }
+                  }).toList();
+
+                  double tongChi = 0;
+                  Map<DanhMuc, double> thongKe = {};
+                  for (var gd in gdThangNay) {
+                    tongChi += gd.soTien;
+                    thongKe[gd.danhMuc] =
+                        (thongKe[gd.danhMuc] ?? 0) + gd.soTien;
+                  }
+
+                  final dsThongKe = thongKe.entries.toList()
+                    ..sort((a, b) => b.value.compareTo(a.value));
+                  final top3 = dsThongKe.take(3).toList();
+                  final khac = dsThongKe
+                      .skip(3)
+                      .fold<double>(0.0, (s, e) => s + e.value);
+
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ManHinhChiTietPhanTich(
+                            danhSachGiaoDich: widget.danhSachGiaoDich,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: MauSac.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: MauSac.borderSubtle.withValues(alpha: 0.4),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Tình hình chi tiêu',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: MauSac.onSurface,
+                                ),
+                              ),
+                              SizedBox(
+                                width: 105,
+                                child: DropdownButtonFormField<String>(
+                                  value: _thoiGianChonPhanTich,
+                                  isExpanded: true,
+                                  borderRadius: BorderRadius.circular(12),
+                                  dropdownColor: const Color(0xFFF8FAFC),
+                                  icon: const Icon(
+                                    Icons.keyboard_arrow_down,
+                                    color: MauSac.onSurfaceVariant,
+                                  ),
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: const Color(0xFFF8FAFC),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(
+                                        color: MauSac.borderSubtle,
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(
+                                        color: MauSac.borderSubtle,
+                                      ),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                  items: _danhSachThoiGian.map((time) {
+                                    return DropdownMenuItem<String>(
+                                      value: time,
+                                      child: Text(
+                                        time,
                                         style: GoogleFonts.manrope(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 15,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
                                           color: MauSac.onSurface,
                                         ),
                                       ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '${DateFormat('HH:mm - dd/MM').format(item.ngay)} • ${item.viTien.tenVi}',
-                                        style: GoogleFonts.manrope(
-                                          fontSize: 12,
-                                          color: MauSac.onSurfaceVariant,
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      setState(() {
+                                        _thoiGianChonPhanTich = value;
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          if (tongChi == 0)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Text(
+                                  'Chưa có chi tiêu nào trong tháng',
+                                  style: GoogleFonts.manrope(
+                                    color: MauSac.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            Row(
+                              children: [
+                                // Donut Chart Placeholder (Stack of CircularProgressIndicators)
+                                SizedBox(
+                                  width: 120,
+                                  height: 120,
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      CircularProgressIndicator(
+                                        value: 1.0,
+                                        strokeWidth: 12,
+                                        backgroundColor:
+                                            MauSac.surfaceContainer,
+                                        valueColor:
+                                            const AlwaysStoppedAnimation<Color>(
+                                              MauSac.surfaceContainer,
+                                            ),
+                                      ),
+                                      ...List.generate(
+                                        top3.length + (khac > 0 ? 1 : 0),
+                                        (index) {
+                                          double accumulated = 0;
+                                          for (int i = 0; i <= index; i++) {
+                                            if (i < top3.length) {
+                                              accumulated += top3[i].value;
+                                            } else {
+                                              accumulated += khac;
+                                            }
+                                          }
+                                          final value = accumulated / tongChi;
+                                          final color = index < top3.length
+                                              ? top3[index].key.mauSac
+                                              : MauSac.outlineVariant;
+                                          return CircularProgressIndicator(
+                                            value: value,
+                                            strokeWidth: 12,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  color,
+                                                ),
+                                          );
+                                        },
+                                      ).reversed, // Reverse to draw larger circles first
+                                      Center(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'Tổng',
+                                              style: GoogleFonts.manrope(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: MauSac.onSurfaceVariant,
+                                              ),
+                                            ),
+                                            Text(
+                                              '100%',
+                                              style: GoogleFonts.manrope(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                                color: MauSac.onSurface,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                Text(
-                                  '${isExpense ? '-' : '+'}${_dinhDangTien(item.soTien)}',
-                                  style: GoogleFonts.manrope(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                    color: isExpense
-                                        ? MauSac.error
-                                        : MauSac.success,
+                                const SizedBox(width: 24),
+                                // Legend
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      ...top3.map((e) {
+                                        final percent =
+                                            (e.value / tongChi * 100)
+                                                .toStringAsFixed(0);
+                                        return Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 8.0,
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Row(
+                                                  children: [
+                                                    Container(
+                                                      width: 8,
+                                                      height: 8,
+                                                      decoration: BoxDecoration(
+                                                        color: e.key.mauSac,
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(
+                                                      child: Text(
+                                                        e.key.ten,
+                                                        style: GoogleFonts.manrope(
+                                                          fontSize: 14,
+                                                          color: MauSac
+                                                              .onSurfaceVariant,
+                                                        ),
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              Text(
+                                                '$percent%',
+                                                style: GoogleFonts.manrope(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: MauSac.onSurface,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }),
+                                      if (khac > 0)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 8.0,
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Row(
+                                                  children: [
+                                                    Container(
+                                                      width: 8,
+                                                      height: 8,
+                                                      decoration:
+                                                          const BoxDecoration(
+                                                            color: MauSac
+                                                                .outlineVariant,
+                                                            shape:
+                                                                BoxShape.circle,
+                                                          ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      'Khác',
+                                                      style: GoogleFonts.manrope(
+                                                        fontSize: 14,
+                                                        color: MauSac
+                                                            .onSurfaceVariant,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              Text(
+                                                '${(khac / tongChi * 100).toStringAsFixed(0)}%',
+                                                style: GoogleFonts.manrope(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: MauSac.onSurface,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          ManHinhChiTietVi(danhSachVi: widget.danhSachVi),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: MauSac.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: MauSac.borderSubtle.withValues(alpha: 0.4),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Tài khoản',
+                            style: GoogleFonts.manrope(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: MauSac.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      ...widget.danhSachVi.take(2).map((vi) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: vi.mauSac.withValues(alpha: 0.15),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      vi.icon,
+                                      color: vi.mauSac,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    vi.tenVi,
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: MauSac.onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                _dinhDangTien(vi.soDu),
+                                style: GoogleFonts.manrope(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: MauSac.onSurface,
+                                ),
+                              ),
+                            ],
                           ),
                         );
-                      },
-                    ),
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
               const SizedBox(height: 80), // bottom padding for FAB & Nav
             ],
           ),

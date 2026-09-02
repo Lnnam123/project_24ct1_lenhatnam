@@ -133,7 +133,7 @@ class PhanTichSkeleton extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Phân tích',
+          'Báo cáo',
           style: GoogleFonts.manrope(
             fontSize: 18,
             fontWeight: FontWeight.bold,

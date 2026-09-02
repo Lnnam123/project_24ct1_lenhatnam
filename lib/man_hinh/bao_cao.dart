@@ -7,14 +7,14 @@ import '../dich_vu/time_service.dart';
 import 'chi_tiet_giao_dich.dart';
 import '../thanh_phan/skeleton_loading.dart';
 
-class ManHinhPhanTich extends StatefulWidget {
+class ManHinhBaoCao extends StatefulWidget {
   final List<GiaoDich> danhSachGiaoDich;
   final VoidCallback onTapThongBao;
   final bool coThongBaoChuaDoc;
   final Future<void> Function() onRefresh;
   final Function(GiaoDich)? moSuaGiaoDich;
 
-  const ManHinhPhanTich({
+  const ManHinhBaoCao({
     super.key, 
     required this.danhSachGiaoDich, 
     required this.onTapThongBao,
@@ -24,10 +24,10 @@ class ManHinhPhanTich extends StatefulWidget {
   });
 
   @override
-  State<ManHinhPhanTich> createState() => _ManHinhPhanTichState();
+  State<ManHinhBaoCao> createState() => _ManHinhBaoCaoState();
 }
 
-class _ManHinhPhanTichState extends State<ManHinhPhanTich> {
+class _ManHinhBaoCaoState extends State<ManHinhBaoCao> {
   DateTime _homNay = DateTime.now();
   bool _isLoadingTime = true;
   
@@ -181,7 +181,7 @@ class _ManHinhPhanTichState extends State<ManHinhPhanTich> {
         children: [
           Center(
             child: Text(
-              'Phân tích',
+              'Báo cáo',
               style: GoogleFonts.manrope(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -766,33 +766,48 @@ class _ManHinhPhanTichState extends State<ManHinhPhanTich> {
                 );
               },
               child: Container(
+                padding: const EdgeInsets.only(top: 6),
                 decoration: BoxDecoration(
-                  color: isToday ? MauSac.primary : Colors.transparent,
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isToday ? MauSac.primary : MauSac.borderSubtle,
+                    width: isToday ? 1.5 : 1,
+                  ),
                 ),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Text(
-                      '$day',
-                      style: GoogleFonts.manrope(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: isToday ? Colors.white : MauSac.onSurfaceVariant,
+                    Container(
+                      width: 24,
+                      height: 24,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: isToday ? MauSac.primary : Colors.transparent,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '$day',
+                        style: GoogleFonts.manrope(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isToday ? Colors.white : MauSac.onSurfaceVariant,
+                        ),
                       ),
                     ),
+                    const SizedBox(height: 2),
                     if (thu > 0 || chi > 0)
                       Column(
                         children: [
                           if (thu > 0)
                             Text(
                               '+${_dinhDangTien(thu)}',
-                              style: GoogleFonts.manrope(fontSize: 10, color: isToday ? Colors.white : MauSac.success),
+                              style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w600, color: MauSac.success),
                             ),
                           if (chi > 0)
                             Text(
                               '-${_dinhDangTien(chi)}',
-                              style: GoogleFonts.manrope(fontSize: 10, color: isToday ? Colors.red.shade100 : MauSac.error),
+                              style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w600, color: MauSac.error),
                             ),
                         ],
                       )

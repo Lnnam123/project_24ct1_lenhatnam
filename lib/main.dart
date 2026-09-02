@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'mo_hinh/du_lieu.dart';
 import 'man_hinh/tong_quan.dart';
-import 'man_hinh/phan_tich.dart';
+import 'man_hinh/bao_cao.dart';
 import 'man_hinh/vi_tien.dart';
 import 'man_hinh/cai_dat.dart';
 import 'man_hinh/dang_nhap.dart';
@@ -543,7 +543,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
         onCapNhatNganSach: _capNhatNganSach,
         onXoaNganSach: _xoaNganSach,
       ),
-      ManHinhPhanTich(
+      ManHinhBaoCao(
         danhSachGiaoDich: _danhSachGiaoDich,
         moSuaGiaoDich: _moModalSuaGiaoDich,
         coThongBaoChuaDoc: _coThongBaoChuaDoc,
@@ -655,7 +655,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildNavItem(0, Icons.grid_view_outlined, Icons.grid_view),
-              _buildNavItem(1, Icons.bar_chart_outlined, Icons.bar_chart),
+              _buildNavItem(1, Icons.pie_chart_outline, Icons.pie_chart),
               const SizedBox(width: 48), // Khoảng trống cho FAB
               _buildNavItem(
                 2,

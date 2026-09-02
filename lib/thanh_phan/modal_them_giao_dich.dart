@@ -172,9 +172,7 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
   }
 
   Widget _buildManualTab() {
-    return Stack(
-      children: [
-        SingleChildScrollView(
+    return SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
@@ -185,11 +183,10 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
                 // Amount
                 Center(
                   child: Text(
-                    'SỐ TIỀN',
+                    'Số tiền',
                     style: GoogleFonts.manrope(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
                       color: MauSac.outline,
                     ),
                   ),
@@ -231,11 +228,10 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
 
                 // Category
                 Text(
-                  'DANH MỤC',
+                  'Danh mục',
                   style: GoogleFonts.manrope(
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 1.2,
                     color: MauSac.outline,
                   ),
                 ),
@@ -388,11 +384,10 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
 
                 // Note
                 Text(
-                  'GHI CHÚ (TÙY CHỌN)',
+                  'Ghi chú (tùy chọn)',
                   style: GoogleFonts.manrope(
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 1.2,
                     color: MauSac.outline,
                   ),
                 ),
@@ -423,11 +418,10 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
 
                 // Wallet selection (subtle addition since it's required for logic)
                 Text(
-                  'TÀI KHOẢN',
+                  'Tài khoản',
                   style: GoogleFonts.manrope(
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 1.2,
                     color: MauSac.outline,
                   ),
                 ),
@@ -471,58 +465,53 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
                   },
                 ),
 
-                const SizedBox(height: 120), // Bottom padding for FAB
-              ],
-            ),
-          ),
-        ),
-        
-        // Fixed bottom button
-        Positioned(
-          left: 20,
-          right: 20,
-          bottom: 20, // keep it slightly above keyboard if possible, or just fixed at bottom
-          child: Container(
-            height: 56,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: MauSac.primary.withValues(alpha: 0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: MauSac.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-              ),
-              onPressed: _luuGiaoDich,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.check_circle, size: 24),
-                  const SizedBox(width: 8),
-                  Text(
-                    widget.giaoDichCu != null ? 'Cập nhật' : 'Lưu giao dịch',
-                    style: GoogleFonts.manrope(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                const SizedBox(height: 48), // Padding before button
+                
+                // Fixed bottom button moved inside scroll view
+                Container(
+                  height: 56,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: MauSac.primary.withValues(alpha: 0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: MauSac.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    onPressed: _luuGiaoDich,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.check_circle, size: 24),
+                        const SizedBox(width: 8),
+                        Text(
+                          widget.giaoDichCu != null ? 'Cập nhật' : 'Lưu giao dịch',
+                          style: GoogleFonts.manrope(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 32),
+              ],
             ),
           ),
-        ),
-      ],
-    );
+        );
   }
 
   Widget _buildAITab() {
@@ -635,7 +624,7 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          widget.giaoDichCu != null ? 'Sửa giao dịch' : 'Giao dịch mới',
+          widget.giaoDichCu != null ? 'Sửa giao dịch' : 'Thêm giao dịch mới',
           style: GoogleFonts.manrope(
             fontSize: 20,
             fontWeight: FontWeight.bold,

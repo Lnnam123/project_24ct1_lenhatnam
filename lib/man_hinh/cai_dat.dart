@@ -15,7 +15,7 @@ import 'doi_mat_khau.dart';
 import '../dich_vu/update_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:local_auth/local_auth.dart';
-
+import 'dieu_khoan.dart';
 class ManHinhCaiDat extends StatefulWidget {
   final NguoiDung nguoiDung;
   final List<DanhMuc> danhSachDanhMuc;
@@ -323,7 +323,14 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
               _buildSettingsItem(
                 icon: Icons.description,
                 title: 'Điều khoản sử dụng',
-                onTap: _hienThongBaoChuaPhatTrien,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ManHinhDieuKhoan(),
+                    ),
+                  );
+                },
               ),
               _buildSettingsItem(
                 icon: Icons.system_update,

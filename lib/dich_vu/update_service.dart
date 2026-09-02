@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:ota_update/ota_update.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../chu_de/mau_sac.dart';
 
@@ -116,22 +117,90 @@ class UpdateService {
       },
     );
   }
-  
-  static void _taiVaCaiDatAPK(BuildContext context, String downloadUrl) {
+  static final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+
+  static Future<void> _initNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+    await _notificationsPlugin.initialize(settings: initializationSettings);
+  }
+
+  static Future<void> _hienThiThongBaoTienTrinh(int id, int progress) async {
+    final AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'update_channel',
+      'Cập nhật ứng dụng',
+      channelDescription: 'Thông báo tiến trình tải xuống bản cập nhật',
+      importance: Importance.low,
+      priority: Priority.low,
+      showProgress: true,
+      maxProgress: 100,
+      progress: progress,
+      onlyAlertOnce: true,
+      ongoing: true,
+      icon: '@mipmap/ic_launcher',
+    );
+    final NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+    await _notificationsPlugin.show(
+      id: id,
+      title: 'Đang tải bản cập nhật...',
+      body: '$progress%',
+      notificationDetails: platformChannelSpecifics,
+    );
+  }
+
+  static void _taiVaCaiDatAPK(BuildContext context, String downloadUrl) async {
     try {
-      // Bắt đầu tải
+      await _initNotifications();
+      
+      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+          _notificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      await androidImplementation?.requestNotificationsPermission();
+
+      int notificationId = 0;
+      
+      // Hiển thị thông báo ngay khi bắt đầu tải
+      if (context.mounted) {
+        _hienThongBaoSnackBar(context, 'Đang tải bản cập nhật trong nền. Vui lòng xem trên thanh thông báo.');
+      }
+      
       final stream = OtaUpdate().execute(
         downloadUrl,
         destinationFilename: 'cointap_update.apk',
       );
       
-      // Hiển thị dialog tiến trình
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) {
-          return _TienTrinhTaiXuong(stream: stream);
-        }
+      stream.listen(
+        (OtaEvent event) {
+          if (event.status == OtaStatus.DOWNLOADING) {
+            int progress = int.tryParse(event.value ?? '0') ?? 0;
+            _hienThiThongBaoTienTrinh(notificationId, progress);
+          } else if (event.status == OtaStatus.INSTALLING) {
+            _notificationsPlugin.cancel(id: notificationId);
+            if (context.mounted) {
+              _hienThongBaoSnackBar(context, 'Tải xong, đang mở trình cài đặt...');
+            }
+          } else if (event.status == OtaStatus.PERMISSION_NOT_GRANTED_ERROR) {
+            _notificationsPlugin.cancel(id: notificationId);
+            if (context.mounted) {
+              _hienThongBaoSnackBar(context, 'Lỗi: Ứng dụng không được cấp quyền ghi bộ nhớ!', isError: true);
+            }
+          } else if (event.status != OtaStatus.DOWNLOADING) {
+            _notificationsPlugin.cancel(id: notificationId);
+            if (context.mounted) {
+              _hienThongBaoSnackBar(context, 'Lỗi cập nhật: ${event.status.toString()} - ${event.value}', isError: true);
+            }
+          }
+        },
+        onError: (error) {
+          _notificationsPlugin.cancel(id: notificationId);
+          if (context.mounted) {
+            _hienThongBaoSnackBar(context, 'Lỗi tải xuống: $error', isError: true);
+          }
+        },
       );
     } catch (e) {
       if (context.mounted) {
@@ -165,124 +234,5 @@ class UpdateService {
       if (p1[i] < p2[i]) return -1;
     }
     return p1.length.compareTo(p2.length);
-  }
-}
-
-class _TienTrinhTaiXuong extends StatefulWidget {
-  final Stream<OtaEvent> stream;
-  const _TienTrinhTaiXuong({required this.stream});
-
-  @override
-  State<_TienTrinhTaiXuong> createState() => _TienTrinhTaiXuongState();
-}
-
-class _TienTrinhTaiXuongState extends State<_TienTrinhTaiXuong> {
-  String _progress = '0';
-  String _status = 'Đang kết nối...';
-  
-  @override
-  void initState() {
-    super.initState();
-    widget.stream.listen(
-      (OtaEvent event) {
-        if (!mounted) return;
-        if (event.status == OtaStatus.DOWNLOADING) {
-          setState(() {
-            _progress = event.value ?? '0';
-            _status = 'Đang tải xuống...';
-          });
-        } else if (event.status == OtaStatus.INSTALLING) {
-          setState(() => _status = 'Đang chuẩn bị cài đặt...');
-          if (Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          }
-        } else if (event.status == OtaStatus.PERMISSION_NOT_GRANTED_ERROR) {
-          if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-          _hienThongBaoSnackBar(context, 'Lỗi: Ứng dụng không được cấp quyền ghi bộ nhớ!', isError: true);
-        } else if (event.status != OtaStatus.DOWNLOADING) {
-          if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-          _hienThongBaoSnackBar(context, 'Có lỗi trong quá trình cập nhật!', isError: true);
-        }
-      },
-      onError: (error) {
-        if (!mounted) return;
-        if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-        _hienThongBaoSnackBar(context, 'Lỗi tải xuống: $error', isError: true);
-      },
-    );
-  }
-
-  void _hienThongBaoSnackBar(BuildContext context, String thongBao, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          thongBao,
-          style: GoogleFonts.manrope(color: MauSac.surface),
-        ),
-        backgroundColor: isError ? MauSac.error : MauSac.success,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    double progressValue = double.tryParse(_progress) ?? 0;
-    
-    return AlertDialog(
-      backgroundColor: MauSac.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      content: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 80,
-                  height: 80,
-                  child: CircularProgressIndicator(
-                    value: progressValue > 0 ? progressValue / 100 : null,
-                    color: MauSac.primary,
-                    backgroundColor: MauSac.surfaceContainerHigh,
-                    strokeWidth: 6,
-                  ),
-                ),
-                Text(
-                  '$_progress%',
-                  style: GoogleFonts.manrope(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: MauSac.primary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Text(
-              _status,
-              style: GoogleFonts.manrope(
-                fontWeight: FontWeight.w600,
-                color: MauSac.onSurface,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Vui lòng đợi. Trình cài đặt sẽ tự động bật khi tải xong.',
-              style: GoogleFonts.manrope(
-                fontSize: 12,
-                color: MauSac.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

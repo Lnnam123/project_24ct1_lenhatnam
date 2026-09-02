@@ -59,12 +59,14 @@ class ModalNganSach extends StatefulWidget {
 class _ModalNganSachState extends State<ModalNganSach> {
   final _amountController = TextEditingController();
   DanhMuc? _danhMucChon;
+  DateTime _thangApDung = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     if (widget.nganSachCu != null) {
       _danhMucChon = widget.nganSachCu!.danhMuc;
+      _thangApDung = widget.nganSachCu!.ngayBatDau;
       // Format initial number with commas
       String balanceStr = widget.nganSachCu!.hanMuc.toStringAsFixed(0);
       String formattedText = '';
@@ -91,9 +93,8 @@ class _ModalNganSachState extends State<ModalNganSach> {
       return;
     }
 
-    final now = DateTime.now();
-    final startOfMonth = DateTime(now.year, now.month, 1);
-    final endOfMonth = DateTime(now.year, now.month + 1, 0);
+    final startOfMonth = DateTime(_thangApDung.year, _thangApDung.month, 1);
+    final endOfMonth = DateTime(_thangApDung.year, _thangApDung.month + 1, 0);
 
     final nganSachMoi = NganSach(
       id: widget.nganSachCu?.id ?? 0,
@@ -141,11 +142,10 @@ class _ModalNganSachState extends State<ModalNganSach> {
                   
                   // Category Selector
                   Text(
-                    'ÁP DỤNG CHO',
+                    'Áp dụng cho',
                     style: GoogleFonts.manrope(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
                       color: MauSac.outline,
                     ),
                   ),
@@ -194,16 +194,84 @@ class _ModalNganSachState extends State<ModalNganSach> {
                     ),
                   ),
 
+                  const SizedBox(height: 24),
+                  
+                  // Month and Year Selector
+                  Text(
+                    'Thời gian',
+                    style: GoogleFonts.manrope(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: MauSac.outline,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: MauSac.surfaceContainerHighest.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<int>(
+                              value: _thangApDung.month,
+                              isExpanded: true,
+                              items: List.generate(12, (index) => DropdownMenuItem(
+                                value: index + 1,
+                                child: Text('Tháng ${index + 1}', style: GoogleFonts.manrope()),
+                              )),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() {
+                                    _thangApDung = DateTime(_thangApDung.year, val, 1);
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: MauSac.surfaceContainerHighest.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<int>(
+                              value: _thangApDung.year,
+                              isExpanded: true,
+                              items: List.generate(10, (index) => DropdownMenuItem(
+                                value: DateTime.now().year - 3 + index,
+                                child: Text('Năm ${DateTime.now().year - 3 + index}', style: GoogleFonts.manrope()),
+                              )),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() {
+                                    _thangApDung = DateTime(val, _thangApDung.month, 1);
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 32),
                   
                   // Limit amount
                   Center(
                     child: Text(
-                      'HẠN MỨC CHI TIÊU THÁNG NÀY (₫)',
+                      'Hạn mức chi tiêu (₫)',
                       style: GoogleFonts.manrope(
-                        fontSize: 12,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        letterSpacing: 1.2,
                         color: MauSac.outline,
                       ),
                     ),

@@ -643,11 +643,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
-        color: MauSac.surface,
+        color: MauSac.surfaceContainerHighest,
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
-        elevation: 20, // Tăng bóng đổ để dễ nhìn như có viền
-        shadowColor: Colors.black.withValues(alpha: 0.5),
+        elevation: 8,
+        shadowColor: Colors.black.withValues(alpha: 0.2),
         clipBehavior: Clip.antiAlias,
         padding: EdgeInsets.zero,
         height: 60,

@@ -106,7 +106,7 @@ class _ManHinhChiTietPhanTichState extends State<ManHinhChiTietPhanTich> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 SizedBox(
-                  width: 105,
+                  width: 125,
                   child: DropdownButtonFormField<String>(
                     value: _thoiGianChon,
                     isExpanded: true,

@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../chu_de/mau_sac.dart';
+import '../man_hinh/tong_quan.dart';
+import '../man_hinh/bao_cao.dart';
+import '../man_hinh/vi_tien.dart';
+import '../man_hinh/cai_dat.dart';
 
 class TrangTongQuanSkeleton extends StatelessWidget {
   const TrangTongQuanSkeleton({super.key});
@@ -15,7 +19,7 @@ class TrangTongQuanSkeleton extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Trang chủ',
+          ManHinhTongQuan.tenTrang,
           style: GoogleFonts.manrope(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -56,62 +60,125 @@ class TrangTongQuanSkeleton extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: Shimmer.fromColors(
+            // Thu chi tháng này skeleton
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: MauSac.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: MauSac.borderSubtle),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Shimmer.fromColors(
                     baseColor: MauSac.surfaceContainerHigh,
                     highlightColor: MauSac.surfaceContainerHighest,
-                    child: Container(
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
+                    child: Container(width: 140, height: 20, color: Colors.white),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Shimmer.fromColors(
+                  const SizedBox(height: 24),
+                  Shimmer.fromColors(
                     baseColor: MauSac.surfaceContainerHigh,
                     highlightColor: MauSac.surfaceContainerHighest,
-                    child: Container(
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
+                    child: Container(width: double.infinity, height: 12, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6))),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Shimmer.fromColors(
-              baseColor: MauSac.surfaceContainerHigh,
-              highlightColor: MauSac.surfaceContainerHighest,
-              child: Container(width: 150, height: 24, color: Colors.white),
+                  const SizedBox(height: 24),
+                  Shimmer.fromColors(
+                    baseColor: MauSac.surfaceContainerHigh,
+                    highlightColor: MauSac.surfaceContainerHighest,
+                    child: Container(width: double.infinity, height: 12, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6))),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: 4,
-              separatorBuilder: (ctx, i) => const SizedBox(height: 12),
-              itemBuilder: (ctx, index) {
-                return Shimmer.fromColors(
-                  baseColor: MauSac.surfaceContainerHigh,
-                  highlightColor: MauSac.surfaceContainerHighest,
-                  child: Container(
-                    height: 76,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+            // Ngân sách skeleton
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: MauSac.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: MauSac.borderSubtle),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Shimmer.fromColors(
+                    baseColor: MauSac.surfaceContainerHigh,
+                    highlightColor: MauSac.surfaceContainerHighest,
+                    child: Container(width: 100, height: 20, color: Colors.white),
                   ),
-                );
-              },
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 120, height: 24, color: Colors.white)),
+                      Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 120, height: 24, color: Colors.white)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Shimmer.fromColors(
+                    baseColor: MauSac.surfaceContainerHigh,
+                    highlightColor: MauSac.surfaceContainerHighest,
+                    child: Container(width: double.infinity, height: 10, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(5))),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Tình hình chi tiêu skeleton
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: MauSac.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: MauSac.borderSubtle),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Shimmer.fromColors(
+                        baseColor: MauSac.surfaceContainerHigh,
+                        highlightColor: MauSac.surfaceContainerHighest,
+                        child: Container(width: 130, height: 20, color: Colors.white),
+                      ),
+                      Shimmer.fromColors(
+                        baseColor: MauSac.surfaceContainerHigh,
+                        highlightColor: MauSac.surfaceContainerHighest,
+                        child: Container(width: 125, height: 32, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Shimmer.fromColors(
+                        baseColor: MauSac.surfaceContainerHigh,
+                        highlightColor: MauSac.surfaceContainerHighest,
+                        child: const CircleAvatar(radius: 60, backgroundColor: Colors.white),
+                      ),
+                      const SizedBox(width: 32),
+                      Expanded(
+                        child: Column(
+                          children: List.generate(3, (index) => 
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: Shimmer.fromColors(
+                                baseColor: MauSac.surfaceContainerHigh,
+                                highlightColor: MauSac.surfaceContainerHighest,
+                                child: Container(width: double.infinity, height: 16, color: Colors.white),
+                              ),
+                            )
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 80),
           ],
@@ -133,7 +200,7 @@ class PhanTichSkeleton extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Báo cáo',
+          ManHinhBaoCao.tenTrang,
           style: GoogleFonts.manrope(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -156,14 +223,29 @@ class PhanTichSkeleton extends StatelessWidget {
             // Filter Tabs
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Shimmer.fromColors(
-                baseColor: MauSac.surfaceContainerHigh,
-                highlightColor: MauSac.surfaceContainerHighest,
-                child: Container(
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: MauSac.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: List.generate(3, (index) => 
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Shimmer.fromColors(
+                          baseColor: MauSac.surfaceContainerHigh,
+                          highlightColor: MauSac.surfaceContainerHighest,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
                   ),
                 ),
               ),
@@ -228,23 +310,24 @@ class PhanTichSkeleton extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       crossAxisAlignment: CrossAxisAlignment.end,
-                      children: List.generate(5, (index) => 
-                        Column(
+                      children: List.generate(5, (index) {
+                        final heights = [100.0, 60.0, 120.0, 40.0, 80.0];
+                        return Column(
                           children: [
                             Shimmer.fromColors(
                               baseColor: MauSac.surfaceContainerHigh, 
                               highlightColor: MauSac.surfaceContainerHighest, 
                               child: Container(
-                                width: 20, 
-                                height: 40.0 + (index * 20), 
-                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))
+                                width: 24, 
+                                height: heights[index], 
+                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6))
                               )
                             ),
                             const SizedBox(height: 8),
-                            Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 30, height: 10, color: Colors.white)),
+                            Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 32, height: 12, color: Colors.white)),
                           ]
-                        )
-                      ),
+                        );
+                      }),
                     ),
                   ],
                 ),
@@ -265,29 +348,44 @@ class PhanTichSkeleton extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 120, height: 16, color: Colors.white)),
-                        Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 48, height: 16, color: Colors.white)),
+                        Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 140, height: 20, color: Colors.white)),
+                        Row(
+                          children: [
+                            Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 24, height: 24, color: Colors.white)),
+                            const SizedBox(width: 16),
+                            Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 24, height: 24, color: Colors.white)),
+                          ],
+                        )
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
+                    // Weekdays
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: List.generate(7, (index) => 
                         Shimmer.fromColors(
                           baseColor: MauSac.surfaceContainerHigh, 
                           highlightColor: MauSac.surfaceContainerHighest, 
-                          child: const CircleAvatar(radius: 14, backgroundColor: Colors.white)
+                          child: Container(width: 20, height: 14, color: Colors.white)
                         )
                       ),
                     ),
                     const SizedBox(height: 12),
+                    // Days
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: List.generate(7, (index) => 
                         Shimmer.fromColors(
                           baseColor: MauSac.surfaceContainerHigh, 
                           highlightColor: MauSac.surfaceContainerHighest, 
-                          child: const CircleAvatar(radius: 14, backgroundColor: Colors.white)
+                          child: Container(
+                            width: 42, 
+                            height: 64, 
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            )
+                          )
                         )
                       ),
                     ),
@@ -315,7 +413,7 @@ class ViTienSkeleton extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Ví tiền',
+          ManHinhViTien.tenTrang,
           style: GoogleFonts.manrope(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -354,49 +452,90 @@ class ViTienSkeleton extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             SizedBox(
-              height: 130,
+              height: 160,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: 3,
                 separatorBuilder: (ctx, i) => const SizedBox(width: 12),
                 itemBuilder: (ctx, index) {
-                  return Shimmer.fromColors(
-                    baseColor: MauSac.surfaceContainerHigh,
-                    highlightColor: MauSac.surfaceContainerHighest,
-                    child: Container(
-                      width: 200,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                  return Container(
+                    width: 220,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: MauSac.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: MauSac.borderSubtle),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: const CircleAvatar(radius: 20, backgroundColor: Colors.white)),
+                            Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 48, height: 24, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)))),
+                          ],
+                        ),
+                        const Spacer(),
+                        Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 60, height: 14, color: Colors.white)),
+                        const SizedBox(height: 8),
+                        Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 120, height: 24, color: Colors.white)),
+                      ],
                     ),
                   );
                 },
               ),
             ),
             const SizedBox(height: 24),
-            Shimmer.fromColors(
-              baseColor: MauSac.surfaceContainerHigh,
-              highlightColor: MauSac.surfaceContainerHighest,
-              child: Container(width: 150, height: 24, color: Colors.white),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Shimmer.fromColors(
+                  baseColor: MauSac.surfaceContainerHigh,
+                  highlightColor: MauSac.surfaceContainerHighest,
+                  child: Container(width: 150, height: 24, color: Colors.white),
+                ),
+                Shimmer.fromColors(
+                  baseColor: MauSac.surfaceContainerHigh,
+                  highlightColor: MauSac.surfaceContainerHighest,
+                  child: Container(width: 125, height: 32, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: 4,
-              separatorBuilder: (ctx, i) => const SizedBox(height: 12),
+              itemCount: 3,
+              separatorBuilder: (ctx, i) => const SizedBox(height: 24),
               itemBuilder: (ctx, index) {
-                return Shimmer.fromColors(
-                  baseColor: MauSac.surfaceContainerHigh,
-                  highlightColor: MauSac.surfaceContainerHighest,
-                  child: Container(
-                    height: 76,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 100, height: 16, color: Colors.white)),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(color: MauSac.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: MauSac.borderSubtle)),
+                      child: Row(
+                        children: [
+                          Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: const CircleAvatar(radius: 20, backgroundColor: Colors.white)),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 80, height: 16, color: Colors.white)),
+                                const SizedBox(height: 4),
+                                Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 120, height: 12, color: Colors.white)),
+                              ],
+                            ),
+                          ),
+                          Shimmer.fromColors(baseColor: MauSac.surfaceContainerHigh, highlightColor: MauSac.surfaceContainerHighest, child: Container(width: 80, height: 16, color: Colors.white)),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 );
               },
             ),
@@ -420,7 +559,7 @@ class CaiDatSkeleton extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Cài đặt',
+          ManHinhCaiDat.tenTrang,
           style: GoogleFonts.manrope(
             fontSize: 20,
             fontWeight: FontWeight.bold,

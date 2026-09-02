@@ -11,6 +11,7 @@ import '../man_hinh/chi_tiet_phan_tich.dart';
 import '../man_hinh/chi_tiet_vi.dart';
 
 class ManHinhTongQuan extends StatefulWidget {
+  static const String tenTrang = 'Tổng quan';
   final NguoiDung nguoiDung;
   final List<GiaoDich> danhSachGiaoDich;
   final List<ViTien> danhSachVi;
@@ -93,7 +94,7 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Tổng quan',
+          ManHinhTongQuan.tenTrang,
           style: GoogleFonts.manrope(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -125,7 +126,6 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
             ),
             onPressed: widget.moThongBao,
           ),
-          const SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(
@@ -590,7 +590,7 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                                 ),
                               ),
                               SizedBox(
-                                width: 105,
+                                width: 125,
                                 child: DropdownButtonFormField<String>(
                                   value: _thoiGianChonPhanTich,
                                   isExpanded: true,
@@ -664,68 +664,74 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                                 SizedBox(
                                   width: 120,
                                   height: 120,
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      CircularProgressIndicator(
-                                        value: 1.0,
-                                        strokeWidth: 12,
-                                        backgroundColor:
-                                            MauSac.surfaceContainer,
-                                        valueColor:
-                                            const AlwaysStoppedAnimation<Color>(
-                                              MauSac.surfaceContainer,
-                                            ),
-                                      ),
-                                      ...List.generate(
-                                        top3.length + (khac > 0 ? 1 : 0),
-                                        (index) {
-                                          double accumulated = 0;
-                                          for (int i = 0; i <= index; i++) {
-                                            if (i < top3.length) {
-                                              accumulated += top3[i].value;
-                                            } else {
-                                              accumulated += khac;
-                                            }
-                                          }
-                                          final value = accumulated / tongChi;
-                                          final color = index < top3.length
-                                              ? top3[index].key.mauSac
-                                              : MauSac.outlineVariant;
-                                          return CircularProgressIndicator(
-                                            value: value,
+                                  child: TweenAnimationBuilder<double>(
+                                    key: ValueKey(_thoiGianChonPhanTich),
+                                    tween: Tween<double>(begin: 0.0, end: 1.0),
+                                    duration: const Duration(milliseconds: 1500),
+                                    curve: Curves.easeOutCubic,
+                                    builder: (context, animValue, child) {
+                                      return Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          CircularProgressIndicator(
+                                            value: 1.0,
                                             strokeWidth: 12,
+                                            backgroundColor:
+                                                MauSac.surfaceContainer,
                                             valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                                  color,
+                                                const AlwaysStoppedAnimation<Color>(
+                                                  MauSac.surfaceContainer,
                                                 ),
-                                          );
-                                        },
-                                      ).reversed, // Reverse to draw larger circles first
-                                      Center(
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              'Tổng',
-                                              style: GoogleFonts.manrope(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: MauSac.onSurfaceVariant,
-                                              ),
+                                          ),
+                                          ...List.generate(
+                                            top3.length + (khac > 0 ? 1 : 0),
+                                            (index) {
+                                              double accumulated = 0;
+                                              for (int i = 0; i <= index; i++) {
+                                                if (i < top3.length) {
+                                                  accumulated += top3[i].value;
+                                                } else {
+                                                  accumulated += khac;
+                                                }
+                                              }
+                                              final targetValue = accumulated / tongChi;
+                                              final value = targetValue * animValue;
+                                              final color = index < top3.length
+                                                  ? top3[index].key.mauSac
+                                                  : MauSac.outlineVariant;
+                                              return CircularProgressIndicator(
+                                                value: value,
+                                                strokeWidth: 12,
+                                                valueColor: AlwaysStoppedAnimation<Color>(color),
+                                              );
+                                            },
+                                          ).reversed, // Reverse to draw larger circles first
+                                          Center(
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  'Tổng',
+                                                  style: GoogleFonts.manrope(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: MauSac.onSurfaceVariant,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '${(100 * animValue).toInt()}%',
+                                                  style: GoogleFonts.manrope(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: MauSac.onSurface,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            Text(
-                                              '100%',
-                                              style: GoogleFonts.manrope(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                                color: MauSac.onSurface,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                                          ),
+                                        ],
+                                      );
+                                    },
                                   ),
                                 ),
                                 const SizedBox(width: 24),

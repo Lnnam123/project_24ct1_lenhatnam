@@ -8,6 +8,7 @@ import 'chi_tiet_giao_dich.dart';
 import '../thanh_phan/skeleton_loading.dart';
 
 class ManHinhBaoCao extends StatefulWidget {
+  static const String tenTrang = 'Báo cáo';
   final List<GiaoDich> danhSachGiaoDich;
   final VoidCallback onTapThongBao;
   final bool coThongBaoChuaDoc;
@@ -120,10 +121,48 @@ class _ManHinhBaoCaoState extends State<ManHinhBaoCao> {
 
     return Scaffold(
       backgroundColor: MauSac.background,
+      appBar: AppBar(
+        backgroundColor: MauSac.background,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          ManHinhBaoCao.tenTrang,
+          style: GoogleFonts.manrope(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: MauSac.onSurface,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Stack(
+              children: [
+                const Icon(
+                  Icons.notifications_outlined,
+                  color: MauSac.onSurface,
+                ),
+                if (widget.coThongBaoChuaDoc)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: MauSac.error,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            onPressed: widget.onTapThongBao,
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
             _buildFilterTabs(),
             Expanded(
               child: PageView.builder(
@@ -173,53 +212,7 @@ class _ManHinhBaoCaoState extends State<ManHinhBaoCao> {
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Center(
-            child: Text(
-              'Báo cáo',
-              style: GoogleFonts.manrope(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: MauSac.onSurface,
-              ),
-            ),
-          ),
-          Positioned(
-            right: 0,
-            child: IconButton(
-              icon: Stack(
-                children: [
-                  const Icon(
-                    Icons.notifications_outlined,
-                    color: MauSac.onSurface,
-                  ),
-                  if (widget.coThongBaoChuaDoc)
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: MauSac.error,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              onPressed: widget.onTapThongBao,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildFilterTabs() {
     return Padding(

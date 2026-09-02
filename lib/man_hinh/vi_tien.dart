@@ -5,6 +5,7 @@ import '../mo_hinh/du_lieu.dart';
 import '../chu_de/mau_sac.dart';
 
 class ManHinhViTien extends StatefulWidget {
+  static const String tenTrang = 'Tài khoản';
   final List<ViTien> danhSachVi;
   final List<GiaoDich> danhSachGiaoDich;
   final VoidCallback moThemViTien;
@@ -54,7 +55,7 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Tài khoản',
+          ManHinhViTien.tenTrang,
           style: GoogleFonts.manrope(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -86,7 +87,6 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
             ),
             onPressed: widget.onTapThongBao,
           ),
-          const SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(
@@ -226,7 +226,7 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
                   style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(
-                  width: 105,
+                  width: 125,
                   child: DropdownButtonFormField<String>(
                     value: _boloc,
                     isExpanded: true,

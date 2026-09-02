@@ -17,6 +17,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:local_auth/local_auth.dart';
 import 'dieu_khoan.dart';
 class ManHinhCaiDat extends StatefulWidget {
+  static const String tenTrang = 'Cài đặt';
   final NguoiDung nguoiDung;
   final List<DanhMuc> danhSachDanhMuc;
   final Function(DanhMuc danhMucMoi) onThemDanhMuc;
@@ -100,7 +101,7 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Cài đặt',
+          ManHinhCaiDat.tenTrang,
           style: GoogleFonts.manrope(
             fontSize: 20,
             fontWeight: FontWeight.bold,

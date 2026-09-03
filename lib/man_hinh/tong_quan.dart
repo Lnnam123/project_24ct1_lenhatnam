@@ -9,6 +9,7 @@ import '../man_hinh/quan_ly_ngan_sach.dart';
 import '../man_hinh/chi_tiet_thu_chi.dart';
 import '../man_hinh/chi_tiet_phan_tich.dart';
 import '../man_hinh/chi_tiet_vi.dart';
+import '../man_hinh/tro_ly_ai.dart';
 
 class ManHinhTongQuan extends StatefulWidget {
   static const String tenTrang = 'Tổng quan';
@@ -51,6 +52,11 @@ class ManHinhTongQuan extends StatefulWidget {
 
 class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
   bool _anSoDu = true;
+  double _aiChatX = 0;
+  double _aiChatY = 0;
+  bool _isAiChatInitialized = false;
+  bool _showAiChat = true;
+
   String _thoiGianChonPhanTich = 'Tháng này';
   final List<String> _danhSachThoiGian = [
     'Hôm nay',
@@ -69,6 +75,18 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
       decimalDigits: 0,
     );
     return formatter.format(soTien);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isAiChatInitialized) {
+      final size = MediaQuery.of(context).size;
+      // Vị trí mặc định: Ở bên phải, cao lên tầm 1/3 trang
+      _aiChatX = size.width - 80;
+      _aiChatY = size.height * 0.65; // Đẩy lên cao hơn một chút
+      _isAiChatInitialized = true;
+    }
   }
 
   void _moManHinhNganSach() {
@@ -128,8 +146,11 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: widget.onRefresh,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: RefreshIndicator(
+              onRefresh: widget.onRefresh,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -947,6 +968,107 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
             ],
           ),
         ),
+      ),
+    ),
+    if (_isAiChatInitialized)
+      Positioned(
+        left: _showAiChat 
+            ? _aiChatX 
+            : (_aiChatX < MediaQuery.of(context).size.width / 2 ? 0.0 : MediaQuery.of(context).size.width - 24),
+        top: _aiChatY,
+        child: _showAiChat
+            ? GestureDetector(
+                onPanUpdate: (details) {
+                  setState(() {
+                    _aiChatX += details.delta.dx;
+                    _aiChatY += details.delta.dy;
+
+                    // Giới hạn để nút không bị kéo văng ra khỏi màn hình
+                    final size = MediaQuery.of(context).size;
+                    _aiChatX = _aiChatX.clamp(0.0, size.width - 64);
+                    _aiChatY = _aiChatY.clamp(0.0, size.height - 160);
+                  });
+                },
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    FloatingActionButton(
+                      heroTag: 'ai_chat_float',
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (context) => const ManHinhTroLyAI()),
+                        );
+                      },
+                      backgroundColor: MauSac.primary, // Nền xanh
+                      foregroundColor: Colors.white,   // Icon trắng
+                      elevation: 8,
+                      child: const Icon(Icons.smart_toy, size: 28),
+                    ),
+                    Positioned(
+                      right: -4,
+                      top: -4,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _showAiChat = false;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: MauSac.error,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: MauSac.surface, width: 2),
+                          ),
+                          child: const Icon(Icons.close, size: 12, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showAiChat = true;
+                  });
+                },
+                child: Container(
+                  width: 24,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: MauSac.primary,
+                    borderRadius: _aiChatX < MediaQuery.of(context).size.width / 2
+                        ? const BorderRadius.only(
+                            topRight: Radius.circular(8),
+                            bottomRight: Radius.circular(8),
+                          )
+                        : const BorderRadius.only(
+                            topLeft: Radius.circular(8),
+                            bottomLeft: Radius.circular(8),
+                          ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Icon(
+                      _aiChatX < MediaQuery.of(context).size.width / 2
+                          ? Icons.chevron_right
+                          : Icons.chevron_left,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+      ),
+  ],
       ),
     );
   }

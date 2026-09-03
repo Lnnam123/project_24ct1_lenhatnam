@@ -16,6 +16,7 @@ import '../dich_vu/update_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:local_auth/local_auth.dart';
 import 'dieu_khoan.dart';
+import 'tro_ly_ai.dart';
 class ManHinhCaiDat extends StatefulWidget {
   static const String tenTrang = 'Cài đặt';
   final NguoiDung nguoiDung;
@@ -241,15 +242,10 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
                 icon: Icons.smart_toy_outlined,
                 title: 'Trợ lí AI',
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Tính năng đang phát triển, vui lòng nhập thủ công', style: GoogleFonts.manrope()),
-                      backgroundColor: MauSac.primary,
-                      behavior: SnackBarBehavior.floating,
-                      margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ManHinhTroLyAI(),
                     ),
                   );
                 },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'mo_hinh/du_lieu.dart';
@@ -61,6 +62,16 @@ class CointapApp extends StatelessWidget {
       title: 'CoinTap',
       debugShowCheckedModeBanner: false,
       theme: MauSac.lightTheme,
+      locale: const Locale('vi', 'VN'),
+      supportedLocales: const [
+        Locale('vi', 'VN'),
+        Locale('en', 'US'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: startScreen,
     );
   }

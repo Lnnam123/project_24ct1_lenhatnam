@@ -190,40 +190,59 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text(
+                      'TỔNG SỐ DƯ',
+                      style: GoogleFonts.manrope(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                        color: Colors.white70,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text(
-                          'TỔNG SỐ DƯ',
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: _anSoDu
+                                    ? '****** '
+                                    : '${_dinhDangTien(tongSoDu).replaceAll('₫', '').trim()} ',
+                              ),
+                              const TextSpan(
+                                text: 'đ',
+                                style: TextStyle(
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ],
+                          ),
                           style: GoogleFonts.manrope(
-                            fontSize: 12,
+                            fontSize: 32,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
-                            color: Colors.white70,
+                            color: Colors.white,
                           ),
                         ),
+                        const SizedBox(width: 12),
                         InkWell(
                           onTap: () {
                             setState(() {
                               _anSoDu = !_anSoDu;
                             });
                           },
-                          child: Icon(
-                            _anSoDu ? Icons.visibility_off : Icons.visibility,
-                            color: Colors.white70,
-                            size: 20,
+                          borderRadius: BorderRadius.circular(20),
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: Icon(
+                              _anSoDu ? Icons.visibility_off : Icons.visibility,
+                              color: Colors.white70,
+                              size: 22,
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _anSoDu ? '****** đ' : _dinhDangTien(tongSoDu),
-                      style: GoogleFonts.manrope(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
                     ),
                   ],
                 ),
@@ -997,7 +1016,8 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                              builder: (context) => const ManHinhTroLyAI()),
+                              builder: (context) =>
+                                  ManHinhTroLyAI(nguoiDung: widget.nguoiDung)),
                         );
                       },
                       backgroundColor: MauSac.primary, // Nền xanh

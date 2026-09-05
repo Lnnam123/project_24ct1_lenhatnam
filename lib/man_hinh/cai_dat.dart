@@ -245,7 +245,8 @@ class _ManHinhCaiDatState extends State<ManHinhCaiDat> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const ManHinhTroLyAI(),
+                      builder: (context) =>
+                          ManHinhTroLyAI(nguoiDung: widget.nguoiDung),
                     ),
                   );
                 },

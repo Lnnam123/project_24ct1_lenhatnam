@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 import '../mo_hinh/du_lieu.dart';
 import '../chu_de/mau_sac.dart';
@@ -59,7 +60,7 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
         formattedText = amountStr[i] + formattedText;
         count++;
         if (count % 3 == 0 && i != 0) {
-          formattedText = ',' + formattedText;
+          formattedText = ',$formattedText';
         }
       }
       _amountController.text = formattedText;
@@ -169,6 +170,62 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
         ),
       );
     });
+  }
+
+  Future<void> _chonNgay() async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _ngayChon,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      helpText: 'CHỌN NGÀY',
+      cancelText: 'HỦY',
+      confirmText: 'CHỌN',
+      fieldLabelText: 'Nhập ngày',
+      fieldHintText: 'dd/mm/yyyy',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: MauSac.primary,
+              onPrimary: Colors.white,
+              onSurface: MauSac.onSurface,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null) {
+      setState(() {
+        _ngayChon = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          _ngayChon.hour,
+          _ngayChon.minute,
+          _ngayChon.second,
+        );
+      });
+    }
+  }
+
+  Future<void> _chonGio() async {
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogCtx) {
+        return _BoChonGioDialog(
+          initialDateTime: _ngayChon,
+          onConfirmed: (newDateTime) {
+            setState(() {
+              _ngayChon = newDateTime;
+            });
+          },
+        );
+      },
+    );
   }
 
   Widget _buildManualTab() {
@@ -382,41 +439,9 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
                 ),
                 const SizedBox(height: 32),
 
-                // Note
-                Text(
-                  'Ghi chú (tùy chọn)',
-                  style: GoogleFonts.manrope(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: MauSac.outline,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: MauSac.borderSubtle),
-                  ),
-                  child: TextField(
-                    controller: _noteController,
-                    maxLines: 3,
-                    style: GoogleFonts.manrope(fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'Khoản chi này dùng để làm gì?',
-                      hintStyle: GoogleFonts.manrope(fontSize: 14, color: MauSac.outlineVariant),
-                      prefixIcon: const Padding(
-                        padding: EdgeInsets.only(bottom: 48), // align icon to top
-                        child: Icon(Icons.edit_note, color: MauSac.outlineVariant),
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 24),
 
-                // Wallet selection (subtle addition since it's required for logic)
+                // Wallet selection
                 Text(
                   'Tài khoản',
                   style: GoogleFonts.manrope(
@@ -463,6 +488,173 @@ class _ModalThemGiaoDichState extends State<ModalThemGiaoDich> with SingleTicker
                   onChanged: (val) {
                     if (val != null) setState(() => _viDangChon = val);
                   },
+                ),
+                const SizedBox(height: 24),
+
+                // Date & Time selection
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Thời gian',
+                      style: GoogleFonts.manrope(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: MauSac.outline,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _ngayChon = DateTime.now();
+                        });
+                      },
+                      child: Text(
+                        'Bây giờ',
+                        style: GoogleFonts.manrope(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: MauSac.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    // Ngày tháng năm
+                    Expanded(
+                      flex: 3,
+                      child: InkWell(
+                        onTap: _chonNgay,
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: MauSac.borderSubtle),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_today_rounded, size: 18, color: MauSac.primary),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Ngày',
+                                      style: GoogleFonts.manrope(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                        color: MauSac.outlineVariant,
+                                      ),
+                                    ),
+                                    Text(
+                                      DateFormat('dd/MM/yyyy').format(_ngayChon),
+                                      style: GoogleFonts.manrope(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: MauSac.onSurface,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: MauSac.onSurfaceVariant),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Giờ phút
+                    Expanded(
+                      flex: 2,
+                      child: InkWell(
+                        onTap: _chonGio,
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: MauSac.borderSubtle),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.access_time_rounded, size: 18, color: MauSac.primary),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Giờ',
+                                      style: GoogleFonts.manrope(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                        color: MauSac.outlineVariant,
+                                      ),
+                                    ),
+                                    Text(
+                                      DateFormat('HH:mm').format(_ngayChon),
+                                      style: GoogleFonts.manrope(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: MauSac.onSurface,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: MauSac.onSurfaceVariant),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Note
+                Text(
+                  'Ghi chú (tùy chọn)',
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: MauSac.outline,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: MauSac.borderSubtle),
+                  ),
+                  child: TextField(
+                    controller: _noteController,
+                    maxLines: 3,
+                    style: GoogleFonts.manrope(fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Khoản chi này dùng để làm gì?',
+                      hintStyle: GoogleFonts.manrope(fontSize: 14, color: MauSac.outlineVariant),
+                      prefixIcon: const Padding(
+                        padding: EdgeInsets.only(bottom: 48), // align icon to top
+                        child: Icon(Icons.edit_note, color: MauSac.outlineVariant),
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 48), // Padding before button
@@ -777,7 +969,7 @@ class CurrencyInputFormatter extends TextInputFormatter {
       formattedText = newText[i] + formattedText;
       count++;
       if (count % 3 == 0 && i != 0) {
-        formattedText = ',' + formattedText;
+        formattedText = ',$formattedText';
       }
     }
 
@@ -788,6 +980,629 @@ class CurrencyInputFormatter extends TextInputFormatter {
     return TextEditingValue(
       text: formattedText,
       selection: TextSelection.collapsed(offset: offset),
+    );
+  }
+}
+
+class _BoChonGioDialog extends StatefulWidget {
+  final DateTime initialDateTime;
+  final ValueChanged<DateTime> onConfirmed;
+
+  const _BoChonGioDialog({
+    required this.initialDateTime,
+    required this.onConfirmed,
+  });
+
+  @override
+  State<_BoChonGioDialog> createState() => _BoChonGioDialogState();
+}
+
+class _BoChonGioDialogState extends State<_BoChonGioDialog> {
+  late int selectedHour;
+  late int selectedMinute;
+
+  late final FixedExtentScrollController hourController;
+  late final FixedExtentScrollController minuteController;
+
+  late final TextEditingController hourInputCtrl;
+  late final TextEditingController minuteInputCtrl;
+  final FocusNode hourFocus = FocusNode();
+  final FocusNode minuteFocus = FocusNode();
+
+  bool isEditingHour = false;
+  bool isEditingMinute = false;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedHour = widget.initialDateTime.hour;
+    selectedMinute = widget.initialDateTime.minute;
+
+    hourController = FixedExtentScrollController(initialItem: selectedHour);
+    minuteController = FixedExtentScrollController(initialItem: selectedMinute);
+
+    hourInputCtrl = TextEditingController(text: selectedHour.toString().padLeft(2, '0'));
+    minuteInputCtrl = TextEditingController(text: selectedMinute.toString().padLeft(2, '0'));
+  }
+
+  @override
+  void dispose() {
+    hourFocus.dispose();
+    minuteFocus.dispose();
+    hourInputCtrl.dispose();
+    minuteInputCtrl.dispose();
+    hourController.dispose();
+    minuteController.dispose();
+    super.dispose();
+  }
+
+  void batDauSuaGio() {
+    minuteFocus.unfocus();
+    if (isEditingMinute) {
+      if (minuteInputCtrl.text.isNotEmpty) {
+        final m = int.tryParse(minuteInputCtrl.text);
+        if (m != null) {
+          selectedMinute = m.clamp(0, 59);
+          minuteController.jumpToItem(selectedMinute);
+        }
+      }
+      minuteInputCtrl.text = selectedMinute.toString().padLeft(2, '0');
+    }
+
+    setState(() {
+      isEditingHour = true;
+      isEditingMinute = false;
+      hourInputCtrl.text = '';
+    });
+    hourFocus.requestFocus();
+  }
+
+  void batDauSuaPhut() {
+    hourFocus.unfocus();
+    if (hourInputCtrl.text.isNotEmpty) {
+      final h = int.tryParse(hourInputCtrl.text);
+      if (h != null) {
+        selectedHour = h.clamp(0, 23);
+        hourController.jumpToItem(selectedHour);
+      }
+    }
+    hourInputCtrl.text = selectedHour.toString().padLeft(2, '0');
+
+    setState(() {
+      isEditingMinute = true;
+      isEditingHour = false;
+      minuteInputCtrl.text = '';
+    });
+    minuteFocus.requestFocus();
+  }
+
+  void ketThucSua() {
+    hourFocus.unfocus();
+    minuteFocus.unfocus();
+
+    if (hourInputCtrl.text.isNotEmpty) {
+      final h = int.tryParse(hourInputCtrl.text);
+      if (h != null) {
+        selectedHour = h.clamp(0, 23);
+        hourController.jumpToItem(selectedHour);
+      }
+    }
+    hourInputCtrl.text = selectedHour.toString().padLeft(2, '0');
+
+    if (minuteInputCtrl.text.isNotEmpty) {
+      final m = int.tryParse(minuteInputCtrl.text);
+      if (m != null) {
+        selectedMinute = m.clamp(0, 59);
+        minuteController.jumpToItem(selectedMinute);
+      }
+    }
+    minuteInputCtrl.text = selectedMinute.toString().padLeft(2, '0');
+
+    setState(() {
+      isEditingHour = false;
+      isEditingMinute = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final isToday = widget.initialDateTime.year == now.year &&
+        widget.initialDateTime.month == now.month &&
+        widget.initialDateTime.day == now.day;
+    final dateFormatted = DateFormat('dd/MM/yyyy').format(widget.initialDateTime);
+    final headerDate = isToday ? 'Hôm nay - $dateFormatted' : dateFormatted;
+
+    return Dialog(
+      backgroundColor: MauSac.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: MauSac.borderSubtle, width: 1),
+      ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: ketThucSua,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header: Ngày bên trái, Giờ có thể nhấn để nhập trực tiếp bên phải
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      headerDate,
+                      style: GoogleFonts.manrope(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: MauSac.outline,
+                      ),
+                    ),
+                    InkWell(
+                      onTap: batDauSuaGio,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.access_time_rounded,
+                              size: 19,
+                              color: MauSac.primary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${selectedHour.toString().padLeft(2, '0')}:${selectedMinute.toString().padLeft(2, '0')}',
+                              style: GoogleFonts.manrope(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: MauSac.onSurface,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.edit_outlined,
+                              size: 14,
+                              color: MauSac.outline,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // Con lăn chọn giờ và phút kèm ô nhập số trực tiếp tại chỗ
+                SizedBox(
+                  height: 160,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Danh sách cuộn giờ và phút (background wheel)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Cột giờ (00 - 23)
+                          SizedBox(
+                            width: 54,
+                            child: ListWheelScrollView.useDelegate(
+                              controller: hourController,
+                              itemExtent: 42,
+                              perspective: 0.003,
+                              physics: isEditingHour || isEditingMinute
+                                  ? const NeverScrollableScrollPhysics()
+                                  : const FixedExtentScrollPhysics(),
+                              onSelectedItemChanged: (index) {
+                                if (isEditingHour) return;
+                                setState(() {
+                                  selectedHour = index;
+                                  hourInputCtrl.text = index.toString().padLeft(2, '0');
+                                });
+                              },
+                              childDelegate: ListWheelChildBuilderDelegate(
+                                childCount: 24,
+                                builder: (context, index) {
+                                  final isSelected = index == selectedHour;
+                                  return Center(
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () {
+                                        if (isSelected) {
+                                          batDauSuaGio();
+                                        } else {
+                                          hourController.animateToItem(
+                                            index,
+                                            duration: const Duration(milliseconds: 200),
+                                            curve: Curves.easeInOut,
+                                          );
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: isSelected && !isEditingHour
+                                            ? BoxDecoration(
+                                                color: MauSac.primaryContainer.withValues(alpha: 0.12),
+                                                borderRadius: BorderRadius.circular(6),
+                                              )
+                                            : null,
+                                        child: Text(
+                                          index.toString().padLeft(2, '0'),
+                                          style: GoogleFonts.manrope(
+                                            fontSize: isSelected ? 20 : 15,
+                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                            color: isSelected
+                                                ? MauSac.primary
+                                                : MauSac.outlineVariant,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+
+                          // Dấu hai chấm ":"
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Text(
+                              ':',
+                              style: GoogleFonts.manrope(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: MauSac.onSurface,
+                              ),
+                            ),
+                          ),
+
+                          // Cột phút (00 - 59)
+                          SizedBox(
+                            width: 54,
+                            child: ListWheelScrollView.useDelegate(
+                              controller: minuteController,
+                              itemExtent: 42,
+                              perspective: 0.003,
+                              physics: isEditingHour || isEditingMinute
+                                  ? const NeverScrollableScrollPhysics()
+                                  : const FixedExtentScrollPhysics(),
+                              onSelectedItemChanged: (index) {
+                                if (isEditingMinute) return;
+                                setState(() {
+                                  selectedMinute = index;
+                                  minuteInputCtrl.text = index.toString().padLeft(2, '0');
+                                });
+                              },
+                              childDelegate: ListWheelChildBuilderDelegate(
+                                childCount: 60,
+                                builder: (context, index) {
+                                  final isSelected = index == selectedMinute;
+                                  return Center(
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () {
+                                        if (isSelected) {
+                                          batDauSuaPhut();
+                                        } else {
+                                          minuteController.animateToItem(
+                                            index,
+                                            duration: const Duration(milliseconds: 200),
+                                            curve: Curves.easeInOut,
+                                          );
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: isSelected && !isEditingMinute
+                                            ? BoxDecoration(
+                                                color: MauSac.primaryContainer.withValues(alpha: 0.12),
+                                                borderRadius: BorderRadius.circular(6),
+                                              )
+                                            : null,
+                                        child: Text(
+                                          index.toString().padLeft(2, '0'),
+                                          style: GoogleFonts.manrope(
+                                            fontSize: isSelected ? 20 : 15,
+                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                            color: isSelected
+                                                ? MauSac.primary
+                                                : MauSac.outlineVariant,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Hai cặp vạch kẻ ngang màu primary của theme
+                      IgnorePointer(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Vạch giờ
+                            SizedBox(
+                              width: 54,
+                              height: 42,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Container(height: 1.5, color: MauSac.primary),
+                                  Container(height: 1.5, color: MauSac.primary),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 26),
+                            // Vạch phút
+                            SizedBox(
+                              width: 54,
+                              height: 42,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Container(height: 1.5, color: MauSac.primary),
+                                  Container(height: 1.5, color: MauSac.primary),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Khung nhập số trực tiếp tại chỗ khi người dùng nhấn vào để gõ
+                      if (isEditingHour || isEditingMinute)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Ô gõ giờ trực tiếp
+                            SizedBox(
+                              width: 54,
+                              height: 38,
+                              child: isEditingHour
+                                  ? Container(
+                                      decoration: BoxDecoration(
+                                        color: MauSac.surface,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: MauSac.primaryContainer.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: TextField(
+                                        controller: hourInputCtrl,
+                                        focusNode: hourFocus,
+                                        textAlign: TextAlign.center,
+                                        keyboardType: TextInputType.number,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.digitsOnly,
+                                          LengthLimitingTextInputFormatter(2),
+                                        ],
+                                        style: GoogleFonts.manrope(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w500,
+                                          color: MauSac.primary,
+                                        ),
+                                        decoration: const InputDecoration(
+                                          border: InputBorder.none,
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
+                                        onChanged: (val) {
+                                          if (val.isEmpty) return;
+                                          final h = int.tryParse(val);
+                                          if (h != null) {
+                                            final validH = h.clamp(0, 23);
+                                            setState(() {
+                                              selectedHour = validH;
+                                            });
+                                          }
+                                          // Chỉ khi nhập đủ 2 số mới tự động chuyển qua phút
+                                          if (val.length >= 2) {
+                                            final h = int.tryParse(val);
+                                            if (h != null) {
+                                              final validH = h.clamp(0, 23);
+                                              selectedHour = validH;
+                                              hourInputCtrl.text = validH.toString().padLeft(2, '0');
+                                              hourController.jumpToItem(validH);
+                                            }
+                                            batDauSuaPhut();
+                                          }
+                                        },
+                                        onSubmitted: (_) {
+                                          batDauSuaPhut();
+                                        },
+                                      ),
+                                    ),
+                                  )
+                                  : const SizedBox(),
+                            ),
+
+                            const SizedBox(width: 26),
+
+                            // Ô gõ phút trực tiếp
+                            SizedBox(
+                              width: 54,
+                              height: 38,
+                              child: isEditingMinute
+                                  ? Container(
+                                      decoration: BoxDecoration(
+                                        color: MauSac.surface,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: MauSac.primaryContainer.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: TextField(
+                                        controller: minuteInputCtrl,
+                                        focusNode: minuteFocus,
+                                        textAlign: TextAlign.center,
+                                        keyboardType: TextInputType.number,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.digitsOnly,
+                                          LengthLimitingTextInputFormatter(2),
+                                        ],
+                                        style: GoogleFonts.manrope(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w500,
+                                          color: MauSac.primary,
+                                        ),
+                                        decoration: const InputDecoration(
+                                          border: InputBorder.none,
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
+                                        onChanged: (val) {
+                                          if (val.isEmpty) return;
+                                          final m = int.tryParse(val);
+                                          if (m != null) {
+                                            final validM = m.clamp(0, 59);
+                                            setState(() {
+                                              selectedMinute = validM;
+                                            });
+                                          }
+                                          // Khi nhập đủ 2 số phút thì hoàn tất
+                                          if (val.length >= 2) {
+                                            final m = int.tryParse(val);
+                                            if (m != null) {
+                                              final validM = m.clamp(0, 59);
+                                              selectedMinute = validM;
+                                              minuteInputCtrl.text = validM.toString().padLeft(2, '0');
+                                              minuteController.jumpToItem(validM);
+                                            }
+                                            ketThucSua();
+                                          }
+                                        },
+                                        onSubmitted: (_) => ketThucSua(),
+                                      ),
+                                    ),
+                                  )
+                                  : const SizedBox(),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Hàng nút: Giờ hiện tại (trái), Đóng & Xác nhận (phải)
+                Row(
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        ketThucSua();
+                        final current = DateTime.now();
+                        setState(() {
+                          selectedHour = current.hour;
+                          selectedMinute = current.minute;
+                          hourInputCtrl.text = current.hour.toString().padLeft(2, '0');
+                          minuteInputCtrl.text = current.minute.toString().padLeft(2, '0');
+                        });
+                        hourController.animateToItem(
+                          current.hour,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                        minuteController.animateToItem(
+                          current.minute,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        child: Text(
+                          'Giờ hiện tại',
+                          style: GoogleFonts.manrope(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: MauSac.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+
+                    // Nút Đóng
+                    OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: MauSac.onSurfaceVariant,
+                        side: const BorderSide(color: MauSac.borderSubtle, width: 1.2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                        minimumSize: Size.zero,
+                      ),
+                      child: Text(
+                        'Đóng',
+                        style: GoogleFonts.manrope(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+
+                    // Nút Xác nhận
+                    ElevatedButton(
+                      onPressed: () {
+                        final h = int.tryParse(hourInputCtrl.text) ?? selectedHour;
+                        final m = int.tryParse(minuteInputCtrl.text) ?? selectedMinute;
+                        final finalH = h.clamp(0, 23);
+                        final finalM = m.clamp(0, 59);
+
+                        final result = DateTime(
+                          widget.initialDateTime.year,
+                          widget.initialDateTime.month,
+                          widget.initialDateTime.day,
+                          finalH,
+                          finalM,
+                        );
+                        widget.onConfirmed(result);
+                        Navigator.of(context).pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: MauSac.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                        minimumSize: Size.zero,
+                      ),
+                      child: Text(
+                        'Xác nhận',
+                        style: GoogleFonts.manrope(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

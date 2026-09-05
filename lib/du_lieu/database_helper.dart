@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../mo_hinh/du_lieu.dart';
 
@@ -508,6 +510,278 @@ class DatabaseHelper {
       await _supabase.from('wallets').update({'is_active': false}).eq('wallet_id', walletId);
     } catch (e) {
       debugPrint('Lỗi deleteWallet: $e');
+    }
+  }
+
+  // --- AI Chat History Methods ---
+  Future<List<Map<String, dynamic>>> getAIChatMessages(int userId) async {
+    // 1. Thử lấy từ Supabase
+    try {
+      final response = await _supabase
+          .from('ai_chat_messages')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      if (response.isNotEmpty) {
+        final messages = response.map((m) => Map<String, dynamic>.from(m)).toList();
+        // Cập nhật bộ nhớ đệm cục bộ
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('ai_chat_history_$userId', jsonEncode(messages));
+        return messages;
+      }
+    } catch (e) {
+      debugPrint('Supabase getAIChatMessages (dùng local cache): $e');
+    }
+
+    // 2. Fallback đọc từ SharedPreferences local
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localJson = prefs.getString('ai_chat_history_$userId');
+      if (localJson != null && localJson.isNotEmpty) {
+        final decoded = jsonDecode(localJson) as List;
+        return decoded.map((m) => Map<String, dynamic>.from(m)).toList();
+      }
+    } catch (e) {
+      debugPrint('Local getAIChatMessages error: $e');
+    }
+
+    return [];
+  }
+
+  Future<void> insertAIChatMessage(int userId, String content, bool isUser, DateTime createdAt) async {
+    final newMsg = {
+      'user_id': userId,
+      'content': content,
+      'is_user': isUser,
+      'created_at': createdAt.toIso8601String(),
+    };
+
+    // 1. Luôn lưu ngay vào SharedPreferences (đảm bảo không mất dữ liệu)
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localJson = prefs.getString('ai_chat_history_$userId');
+      List<dynamic> list = [];
+      if (localJson != null && localJson.isNotEmpty) {
+        list = jsonDecode(localJson) as List;
+      }
+      list.insert(0, newMsg);
+      if (list.length > 100) {
+        list = list.sublist(0, 100);
+      }
+      await prefs.setString('ai_chat_history_$userId', jsonEncode(list));
+    } catch (e) {
+      debugPrint('Lỗi lưu local AI chat: $e');
+    }
+
+    // 2. Đồng bộ lên Supabase nếu có bảng
+    try {
+      await _supabase.from('ai_chat_messages').insert(newMsg);
+    } catch (e) {
+      debugPrint('Lỗi insert Supabase AI chat (đã lưu local): $e');
+    }
+  }
+
+  Future<void> clearAIChatMessages(int userId) async {
+    // 1. Xóa local
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('ai_chat_history_$userId');
+    } catch (e) {
+      debugPrint('Lỗi clear local AI chat: $e');
+    }
+
+    // 2. Xóa Supabase
+    try {
+      await _supabase.from('ai_chat_messages').delete().eq('user_id', userId);
+    } catch (e) {
+      debugPrint('Lỗi clear Supabase AI chat: $e');
+    }
+  }
+
+  // --- AI Conversations (Multi-session / Gemini-style) Methods ---
+  Future<List<Map<String, dynamic>>> getAIConversations(int userId) async {
+    // 1. Thử lấy từ Supabase
+    try {
+      final convResponse = await _supabase
+          .from('ai_conversations')
+          .select()
+          .eq('user_id', userId)
+          .order('updated_at', ascending: false);
+
+      if (convResponse.isNotEmpty) {
+        final List<Map<String, dynamic>> sessions = [];
+        for (final conv in convResponse) {
+          final sId = conv['session_id'].toString();
+          final msgResponse = await _supabase
+              .from('ai_chat_messages')
+              .select()
+              .eq('session_id', sId)
+              .order('created_at', ascending: true);
+
+          final convMap = Map<String, dynamic>.from(conv);
+          convMap['messages'] = (msgResponse as List).map((m) => Map<String, dynamic>.from(m)).toList();
+          sessions.add(convMap);
+        }
+
+        // Cập nhật bộ nhớ đệm cục bộ
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('ai_sessions_$userId', jsonEncode(sessions));
+        return sessions;
+      }
+    } catch (e) {
+      debugPrint('Supabase getAIConversations (dùng local cache): $e');
+    }
+
+    // 2. Fallback đọc từ SharedPreferences local
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localJson = prefs.getString('ai_sessions_$userId');
+      if (localJson != null && localJson.isNotEmpty) {
+        final decoded = jsonDecode(localJson) as List;
+        return decoded.map((m) => Map<String, dynamic>.from(m)).toList();
+      }
+    } catch (e) {
+      debugPrint('Local getAIConversations error: $e');
+    }
+
+    return [];
+  }
+
+  Future<void> saveAIConversation(int userId, Map<String, dynamic> sessionData) async {
+    final sessionId = sessionData['session_id'].toString();
+
+    // 1. Lưu ngay vào local SharedPreferences
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localJson = prefs.getString('ai_sessions_$userId');
+      List<dynamic> list = [];
+      if (localJson != null && localJson.isNotEmpty) {
+        list = jsonDecode(localJson) as List;
+      }
+      final existingIndex = list.indexWhere((s) => s['session_id']?.toString() == sessionId);
+      if (existingIndex >= 0) {
+        list[existingIndex] = sessionData;
+      } else {
+        list.insert(0, sessionData);
+      }
+      await prefs.setString('ai_sessions_$userId', jsonEncode(list));
+    } catch (e) {
+      debugPrint('Lỗi lưu local AI conversation: $e');
+    }
+
+    // 2. Đồng bộ lên Supabase
+    try {
+      await _supabase.from('ai_conversations').upsert({
+        'session_id': sessionId,
+        'user_id': userId,
+        'title': sessionData['title'] ?? 'Cuộc trò chuyện mới',
+        'created_at': sessionData['created_at'],
+        'updated_at': sessionData['updated_at'],
+      });
+
+      final messages = sessionData['messages'] as List?;
+      if (messages != null && messages.isNotEmpty) {
+        final lastMsg = messages.last;
+        await _supabase.from('ai_chat_messages').insert({
+          'session_id': sessionId,
+          'user_id': userId,
+          'content': lastMsg['content'],
+          'is_user': lastMsg['is_user'],
+          'created_at': lastMsg['created_at'],
+        });
+      }
+    } catch (e) {
+      debugPrint('Lỗi upsert Supabase AI conversation: $e');
+    }
+  }
+
+  Future<void> deleteAIConversation(int userId, String sessionId) async {
+    // 1. Xóa local
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localJson = prefs.getString('ai_sessions_$userId');
+      if (localJson != null && localJson.isNotEmpty) {
+        List<dynamic> list = jsonDecode(localJson) as List;
+        list.removeWhere((s) => s['session_id']?.toString() == sessionId);
+        await prefs.setString('ai_sessions_$userId', jsonEncode(list));
+      }
+    } catch (e) {
+      debugPrint('Lỗi delete local AI conversation: $e');
+    }
+
+    // 2. Xóa Supabase: Xóa tất cả tin nhắn con trước, sau đó xóa phiên trò chuyện chính
+    try {
+      await _supabase.from('ai_chat_messages').delete().eq('session_id', sessionId);
+      await _supabase.from('ai_conversations').delete().eq('session_id', sessionId);
+    } catch (e) {
+      debugPrint('Lỗi delete Supabase AI conversation: $e');
+    }
+  }
+
+  /// Đồng bộ danh sách tin nhắn còn lại sau khi xóa 1 hoặc nhiều tin nhắn nhỏ
+  Future<void> syncAIConversationMessages(
+    int userId,
+    String sessionId,
+    List<Map<String, dynamic>> remainingMessages,
+  ) async {
+    // 1. Cập nhật local
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localJson = prefs.getString('ai_sessions_$userId');
+      if (localJson != null && localJson.isNotEmpty) {
+        List<dynamic> list = jsonDecode(localJson) as List;
+        final index = list.indexWhere((s) => s['session_id']?.toString() == sessionId);
+        if (index >= 0) {
+          final session = Map<String, dynamic>.from(list[index]);
+          session['messages'] = remainingMessages;
+          session['updated_at'] = DateTime.now().toIso8601String();
+          list[index] = session;
+          await prefs.setString('ai_sessions_$userId', jsonEncode(list));
+        }
+      }
+    } catch (e) {
+      debugPrint('Lỗi sync local AI messages: $e');
+    }
+
+    // 2. Đồng bộ lên Supabase: Xóa sạch tin nhắn cũ của session và nạp lại danh sách mới
+    try {
+      await _supabase.from('ai_chat_messages').delete().eq('session_id', sessionId);
+      if (remainingMessages.isNotEmpty) {
+        final List<Map<String, dynamic>> records = remainingMessages.map((m) => {
+          'session_id': sessionId,
+          'user_id': userId,
+          'content': m['content'],
+          'is_user': m['is_user'] == true || m['is_user'] == 1,
+          'created_at': m['created_at'],
+        }).toList();
+        await _supabase.from('ai_chat_messages').insert(records);
+      }
+      // Cập nhật updated_at cho phiên
+      await _supabase.from('ai_conversations').update({
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('session_id', sessionId);
+    } catch (e) {
+      debugPrint('Lỗi sync Supabase AI messages: $e');
+    }
+  }
+
+  Future<void> clearAllAIConversations(int userId) async {
+    // 1. Xóa local
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('ai_sessions_$userId');
+      await prefs.remove('ai_chat_history_$userId');
+    } catch (e) {
+      debugPrint('Lỗi clear local AI conversations: $e');
+    }
+
+    // 2. Xóa Supabase: Xóa tin nhắn con trước, sau đó xóa phiên
+    try {
+      await _supabase.from('ai_chat_messages').delete().eq('user_id', userId);
+      await _supabase.from('ai_conversations').delete().eq('user_id', userId);
+    } catch (e) {
+      debugPrint('Lỗi clear Supabase AI conversations: $e');
     }
   }
 

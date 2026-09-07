@@ -9,7 +9,6 @@ import '../man_hinh/quan_ly_ngan_sach.dart';
 import '../man_hinh/chi_tiet_thu_chi.dart';
 import '../man_hinh/chi_tiet_phan_tich.dart';
 import '../man_hinh/chi_tiet_vi.dart';
-import '../thanh_phan/nut_ai_chat_floating.dart';
 
 class ManHinhTongQuan extends StatefulWidget {
   static const String tenTrang = 'Tổng quan';
@@ -130,11 +129,8 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: RefreshIndicator(
-              onRefresh: widget.onRefresh,
+      body: RefreshIndicator(
+        onRefresh: widget.onRefresh,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -187,22 +183,10 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: _anSoDu
-                                    ? '****** '
-                                    : '${_dinhDangTien(tongSoDu).replaceAll('₫', '').trim()} ',
-                              ),
-                              const TextSpan(
-                                text: 'đ',
-                                style: TextStyle(
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
-                            ],
-                          ),
+                        Text(
+                          _anSoDu
+                              ? '****** đ'
+                              : '${NumberFormat('#,###', 'vi_VN').format(tongSoDu)} đ',
                           style: GoogleFonts.manrope(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
@@ -971,13 +955,6 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
             ],
           ),
         ),
-      ),
-    ),
-    NutAiChatFloating(
-      nguoiDung: widget.nguoiDung,
-      heroTag: 'ai_chat_tong_quan',
-    ),
-  ],
       ),
     );
   }

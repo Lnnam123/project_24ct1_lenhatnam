@@ -843,6 +843,19 @@ table.modern-table td {
 .badge-active {
   background: #E8F5E9;
   color: #2E7D32;
+  border: 1px solid #C8E6C9;
+}
+
+.badge-suspended {
+  background: #FFF8E1;
+  color: #E65100;
+  border: 1px solid #FFE082;
+}
+
+.badge-locked {
+  background: #FFEBEE;
+  color: #C62828;
+  border: 1px solid #FFCDD2;
 }
 
 /* Notification Badge Styles */
@@ -927,6 +940,30 @@ table.modern-table td {
   color: #ffffff;
 }
 
+.btn-warning {
+  background: #FFF3E0;
+  color: #E65100;
+  border: 1px solid #FFE0B2;
+}
+
+.btn-warning:hover {
+  background: #F57C00;
+  color: #ffffff;
+  border-color: #F57C00;
+}
+
+.btn-success {
+  background: #E8F5E9;
+  color: #2E7D32;
+  border: 1px solid #C8E6C9;
+}
+
+.btn-success:hover {
+  background: #2E7D32;
+  color: #ffffff;
+  border-color: #2E7D32;
+}
+
 .btn-sm {
   padding: 6px 12px;
   font-size: 12.5px;
@@ -957,6 +994,18 @@ table.modern-table td {
   background: var(--danger-bg);
   color: var(--danger);
   border-color: var(--danger);
+}
+
+.action-btn.warning:hover {
+  background: #FFF8E1;
+  color: #E65100;
+  border-color: #FFB300;
+}
+
+.action-btn.success:hover {
+  background: #E8F5E9;
+  color: #2E7D32;
+  border-color: #66BB6A;
 }
 
 /* Forms */

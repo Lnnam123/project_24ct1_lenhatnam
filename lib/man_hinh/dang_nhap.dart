@@ -66,25 +66,35 @@ class _ManHinhDangNhapState extends State<ManHinhDangNhap> {
     }
 
     setState(() => _isLoading = true);
-    // gọi hàm đăng nhập
-    final user = await DatabaseHelper.instance.login(email, password);
+    try {
+      final user = await DatabaseHelper.instance.login(email, password);
+      setState(() => _isLoading = false);
 
-    setState(() => _isLoading = false);
+      if (user != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('saved_user_id', user.id);
+        await prefs.setString('saved_user_name', user.hoTen);
+        await prefs.setString('saved_user_email', user.email);
 
-    if (user != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('saved_user_id', user.id);
-      await prefs.setString('saved_user_name', user.hoTen);
-      await prefs.setString('saved_user_email', user.email);
-
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => ManHinhChinh(nguoiDung: user)),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Email hoặc mật khẩu không chính xác!')),
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => ManHinhChinh(nguoiDung: user)),
-      );
-    } else {
-      if (!mounted) return;
+      final msg = e.toString().replaceAll('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email hoặc mật khẩu không chính xác!')),
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: Colors.red.shade700,
+        ),
       );
     }
   }

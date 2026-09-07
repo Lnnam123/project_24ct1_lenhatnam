@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../chu_de/mau_sac.dart';
 import '../mo_hinh/du_lieu.dart';
+import '../tien_ich/bieu_tuong_helper.dart';
 
 class ManHinhThemDanhMuc extends StatefulWidget {
   final Function(DanhMuc danhMucMoi) onThemDanhMuc;
@@ -16,19 +17,11 @@ class ManHinhThemDanhMuc extends StatefulWidget {
 class _ManHinhThemDanhMucState extends State<ManHinhThemDanhMuc> {
   LoaiGiaoDich _loaiSelected = LoaiGiaoDich.chiTieu;
   final TextEditingController _tenController = TextEditingController();
+  final TextEditingController _timKiemIconController = TextEditingController();
+  String _tuKhoaIcon = '';
+  String _nhomIconSelected = 'ALL';
 
-  final List<IconData> _icons = [
-    Icons.shopping_cart,
-    Icons.restaurant,
-    Icons.directions_car,
-    Icons.health_and_safety,
-    Icons.movie,
-    Icons.home,
-    Icons.school,
-    Icons.flight,
-    Icons.sports_esports,
-  ];
-
+  late List<IconData> _icons;
   late IconData _iconSelected;
 
   final List<Color> _colors = [
@@ -47,11 +40,18 @@ class _ManHinhThemDanhMucState extends State<ManHinhThemDanhMuc> {
   @override
   void initState() {
     super.initState();
+    _icons = List<IconData>.from(BieuTuongHelper.danhSachTatCaIcon);
+
     if (widget.danhMucSua != null) {
       _loaiSelected = widget.danhMucSua!.loai;
       _tenController.text = widget.danhMucSua!.ten;
       _iconSelected = widget.danhMucSua!.icon;
       _colorSelected = widget.danhMucSua!.mauSac;
+
+      // Đảm bảo icon của danh mục sửa luôn có trong danh sách
+      if (!_icons.any((ic) => ic.codePoint == _iconSelected.codePoint)) {
+        _icons.insert(0, _iconSelected);
+      }
     } else {
       _iconSelected = _icons[0];
       _colorSelected = _colors[0];
@@ -61,7 +61,23 @@ class _ManHinhThemDanhMucState extends State<ManHinhThemDanhMuc> {
   @override
   void dispose() {
     _tenController.dispose();
+    _timKiemIconController.dispose();
     super.dispose();
+  }
+
+  List<BieuTuongItem> get _danhSachIconHienThi {
+    return BieuTuongHelper.danhSachBieuTuong.where((item) {
+      if (_nhomIconSelected != 'ALL' && item.category != _nhomIconSelected) {
+        return false;
+      }
+      if (_tuKhoaIcon.trim().isNotEmpty) {
+        final q = _tuKhoaIcon.trim().toLowerCase();
+        return item.name.toLowerCase().contains(q) ||
+            item.label.toLowerCase().contains(q) ||
+            item.tags.toLowerCase().contains(q);
+      }
+      return true;
+    }).toList();
   }
 
   void _luuDanhMuc() {
@@ -240,58 +256,184 @@ class _ManHinhThemDanhMucState extends State<ManHinhThemDanhMuc> {
                   const SizedBox(height: 24),
 
                   // Choose Icon
-                  Text(
-                    'Chọn biểu tượng',
-                    style: GoogleFonts.manrope(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: MauSac.onSurfaceVariant,
-                      letterSpacing: 0.5,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Chọn biểu tượng',
+                        style: GoogleFonts.manrope(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: MauSac.onSurfaceVariant,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _colorSelected.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: _colorSelected.withValues(alpha: 0.25)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(_iconSelected, size: 15, color: _colorSelected),
+                            const SizedBox(width: 6),
+                            Text(
+                              BieuTuongHelper.layNhanIcon(_iconSelected),
+                              style: GoogleFonts.manrope(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: _colorSelected,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Search Box
+                  Container(
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: MauSac.borderSubtle),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.search, size: 18, color: MauSac.outline),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _timKiemIconController,
+                            onChanged: (val) => setState(() => _tuKhoaIcon = val),
+                            style: GoogleFonts.manrope(fontSize: 13, color: MauSac.onSurface),
+                            decoration: InputDecoration(
+                              hintText: 'Tìm biểu tượng (ăn, xe, bill, game, tiền...)...',
+                              hintStyle: GoogleFonts.manrope(fontSize: 12.5, color: MauSac.outlineVariant),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ),
+                        if (_tuKhoaIcon.isNotEmpty)
+                          GestureDetector(
+                            onTap: () {
+                              _timKiemIconController.clear();
+                              setState(() => _tuKhoaIcon = '');
+                            },
+                            child: const Icon(Icons.close, size: 16, color: MauSac.outline),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Category Filter Tabs
+                  SizedBox(
+                    height: 32,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: BieuTuongHelper.danhSachNhom.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 6),
+                      itemBuilder: (context, idx) {
+                        final nhom = BieuTuongHelper.danhSachNhom[idx];
+                        final isSelected = _nhomIconSelected == nhom.id;
+                        return GestureDetector(
+                          onTap: () => setState(() => _nhomIconSelected = nhom.id),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: isSelected ? MauSac.primary : MauSac.surface,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: isSelected ? MauSac.primary : MauSac.borderSubtle,
+                              ),
+                            ),
+                            child: Text(
+                              nhom.label,
+                              style: GoogleFonts.manrope(
+                                fontSize: 11.5,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                color: isSelected ? Colors.white : MauSac.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 12),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 1.0,
-                    ),
-                    itemCount: _icons.length,
-                    itemBuilder: (context, index) {
-                      final icon = _icons[index];
-                      final isSelected = icon == _iconSelected;
-                      return GestureDetector(
-                        onTap: () => setState(() => _iconSelected = icon),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          decoration: BoxDecoration(
-                            color: isSelected ? _colorSelected : MauSac.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isSelected ? Colors.transparent : MauSac.borderSubtle,
+
+                  // Icons Grid
+                  if (_danhSachIconHienThi.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: MauSac.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: MauSac.borderSubtle),
+                      ),
+                      child: Text(
+                        'Không tìm thấy biểu tượng nào phù hợp với "$_tuKhoaIcon"',
+                        style: GoogleFonts.manrope(fontSize: 13, color: MauSac.outline),
+                      ),
+                    )
+                  else
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 5,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1.0,
+                      ),
+                      itemCount: _danhSachIconHienThi.length,
+                      itemBuilder: (context, index) {
+                        final item = _danhSachIconHienThi[index];
+                        final isSelected = item.icon.codePoint == _iconSelected.codePoint;
+                        return Tooltip(
+                          message: item.label,
+                          child: GestureDetector(
+                            onTap: () => setState(() => _iconSelected = item.icon),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              decoration: BoxDecoration(
+                                color: isSelected ? _colorSelected : MauSac.surface,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isSelected ? Colors.transparent : MauSac.borderSubtle,
+                                  width: isSelected ? 2 : 1,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: _colorSelected.withValues(alpha: 0.35),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        )
+                                      ]
+                                    : [],
+                              ),
+                              child: Icon(
+                                item.icon,
+                                size: 24,
+                                color: isSelected ? Colors.white : MauSac.onSurfaceVariant,
+                              ),
                             ),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: _colorSelected.withValues(alpha: 0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 3),
-                                    )
-                                  ]
-                                : [],
                           ),
-                          child: Icon(
-                            icon,
-                            size: 28,
-                            color: isSelected ? Colors.white : MauSac.onSurfaceVariant,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                        );
+                      },
+                    ),
                   const SizedBox(height: 24),
 
                   // Color Picker

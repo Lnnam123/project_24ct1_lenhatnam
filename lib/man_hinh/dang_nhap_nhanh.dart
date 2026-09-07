@@ -90,7 +90,47 @@ class _ManHinhDangNhapNhanhState extends State<ManHinhDangNhapNhanh> {
     }
   }
 
-  void _loginWithSavedData() {
+  Future<void> _loginWithSavedData() async {
+    setState(() => _isLoading = true);
+    final status = await DatabaseHelper.instance.checkUserStatus(widget.savedUserId);
+    setState(() => _isLoading = false);
+
+    if (status == 'LOCKED') {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Tài khoản của bạn đã bị khoá bởi Quản trị viên!'),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+      return;
+    }
+    if (status == 'SUSPENDED') {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Tài khoản của bạn đang tạm thời bị ngưng hoạt động!'),
+          backgroundColor: Colors.orange.shade800,
+        ),
+      );
+      return;
+    }
+    if (status == 'DELETED') {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Tài khoản của bạn không tồn tại hoặc đã bị xoá khỏi hệ thống!'),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const ManHinhDangNhap(allowRedirect: false)),
+      );
+      return;
+    }
+
     final user = NguoiDung(
       id: widget.savedUserId,
       hoTen: widget.savedUserName,
@@ -115,19 +155,30 @@ class _ManHinhDangNhapNhanhState extends State<ManHinhDangNhapNhanh> {
 
     setState(() => _isLoading = true);
 
-    final user = await DatabaseHelper.instance.login(widget.savedUserEmail, password);
+    try {
+      final user = await DatabaseHelper.instance.login(widget.savedUserEmail, password);
+      setState(() => _isLoading = false);
 
-    setState(() => _isLoading = false);
-
-    if (user != null) {
+      if (user != null) {
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => ManHinhChinh(nguoiDung: user)),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Mật khẩu không chính xác!')),
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => ManHinhChinh(nguoiDung: user)),
-      );
-    } else {
-      if (!mounted) return;
+      final msg = e.toString().replaceAll('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mật khẩu không chính xác!')),
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: Colors.red.shade700,
+        ),
       );
     }
   }

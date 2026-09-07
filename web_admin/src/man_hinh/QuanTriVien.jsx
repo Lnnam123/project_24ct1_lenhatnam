@@ -14,9 +14,9 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import Modal from '../components/Modal';
-import ConfirmModal from '../components/ConfirmModal';
-import { ApiService, formatDateTime } from '../services/api';
+import Modal from '../thanh_phan/HopThoai';
+import ConfirmModal from '../thanh_phan/HopThoaiXacNhan';
+import { ApiService, formatDateTime } from '../dich_vu/api';
 
 export default function AdminsView({ showToast, currentUser }) {
   const [admins, setAdmins] = useState([]);
@@ -32,7 +32,7 @@ export default function AdminsView({ showToast, currentUser }) {
       if (local) return JSON.parse(local);
       const session = sessionStorage.getItem('cointap_admin_session');
       if (session) return JSON.parse(session);
-    } catch (e) {
+    } catch {
       return null;
     }
     return null;
@@ -70,10 +70,6 @@ export default function AdminsView({ showToast, currentUser }) {
   const [deleteTargetAdmin, setDeleteTargetAdmin] = useState(null);
   const [isDeletingAdmin, setIsDeletingAdmin] = useState(false);
 
-  useEffect(() => {
-    loadAdmins();
-  }, []);
-
   const loadAdmins = async () => {
     setLoading(true);
     const res = await ApiService.getAdmins();
@@ -85,6 +81,24 @@ export default function AdminsView({ showToast, currentUser }) {
     setAdmins(res.admins || []);
     setLoading(false);
   };
+
+  useEffect(() => {
+    let ignore = false;
+    ApiService.getAdmins().then((res) => {
+      if (!ignore) {
+        if (res.tableMissing) {
+          setTableMissing(true);
+        } else {
+          setTableMissing(false);
+        }
+        setAdmins(res.admins || []);
+        setLoading(false);
+      }
+    });
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const sqlCode = `-- Chạy lệnh này trên Supabase SQL Editor nếu chưa tạo bảng admins:
 CREATE TABLE IF NOT EXISTS admins (

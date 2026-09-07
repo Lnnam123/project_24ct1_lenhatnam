@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../mo_hinh/du_lieu.dart';
 import '../du_lieu/database_helper.dart';
@@ -1427,19 +1428,7 @@ Nếu bạn muốn, mình có thể phân tích tiếp:
           const SizedBox(height: 12),
           // Recent chat items
           if (_dangTaiDuLieu)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Color(0xFF7C4DFF),
-                  ),
-                ),
-              ),
-            )
+            _buildSkeletonTroChuyenGanDay(itemCount: 3)
           else if (_danhSachCuocTroChuyen.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -1616,6 +1605,102 @@ Nếu bạn muốn, mình có thể phân tích tiếp:
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonTroChuyenGanDay({
+    int itemCount = 3,
+    bool isHistoryPage = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Column(
+        children: List.generate(itemCount, (index) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: isHistoryPage ? 14 : 16,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(isHistoryPage ? 16 : 20),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.9),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF9E8EBE).withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Shimmer.fromColors(
+              baseColor: const Color(0xFFEAE5F5),
+              highlightColor: const Color(0xFFFAF8FD),
+              period: const Duration(milliseconds: 1400),
+              child: Row(
+                children: [
+                  // Icon thanh mờ
+                  Container(
+                    width: isHistoryPage ? 36 : 38,
+                    height: isHistoryPage ? 36 : 38,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  // Thanh mờ văn bản
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Thanh mờ tiêu đề
+                        Container(
+                          width: index == 0
+                              ? 210
+                              : index == 1
+                                  ? 160
+                                  : 190,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(7),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Thanh mờ thời gian
+                        Container(
+                          width: index == 0 ? 80 : 100,
+                          height: 11,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isHistoryPage) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        }),
       ),
     );
   }
@@ -2377,7 +2462,16 @@ Nếu bạn muốn, mình có thể phân tích tiếp:
         const SizedBox(height: 6),
         // Danh sách các cuộc trò chuyện gần đây
         Expanded(
-          child: danhSachLoc.isEmpty
+          child: _dangTaiDuLieu
+              ? SingleChildScrollView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.only(top: 4),
+                  child: _buildSkeletonTroChuyenGanDay(
+                    itemCount: 6,
+                    isHistoryPage: true,
+                  ),
+                )
+              : danhSachLoc.isEmpty
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

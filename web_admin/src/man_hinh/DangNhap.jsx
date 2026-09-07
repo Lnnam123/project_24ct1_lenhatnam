@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../services/supabase';
+import { supabase } from '../dich_vu/supabase';
 import { 
   Lock, 
   User, 
@@ -44,7 +44,7 @@ export default function LoginView({ onLoginSuccess }) {
 
     try {
       // 1. Kiểm tra xác thực trực tiếp từ Bảng riêng 'quan_tri_vien' trên Supabase
-      const { data: adminUser, error: adminErr } = await supabase
+      const { data: adminUser } = await supabase
         .from('quan_tri_vien')
         .select('*')
         .eq('ten_dang_nhap', cleanUser)

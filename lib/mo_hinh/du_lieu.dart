@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../tien_ich/bieu_tuong_helper.dart';
 
 enum LoaiGiaoDich { chiTieu, thuNhap, chuyenKhoan }
 
@@ -79,13 +80,6 @@ class ViTien {
   }
 
   factory ViTien.fromMap(Map<String, dynamic> map) {
-    // Basic mapping for Icon and Color
-    IconData getIcon(String? iconName) {
-      if (iconName == 'account_balance') return Icons.account_balance;
-      if (iconName == 'credit_card') return Icons.credit_card;
-      return Icons.payments;
-    }
-
     Color getColor(String? hex) {
       if (hex == null || hex.isEmpty) return const Color(0xFF004AC6);
       hex = hex.replaceAll('#', '');
@@ -101,7 +95,7 @@ class ViTien {
       loaiVi: map['loai_vi'] ?? map['wallet_type'] ?? 'CASH',
       soDu: ((map['so_du'] ?? map['balance']) as num?)?.toDouble() ?? 0.0,
       soTaiKhoan: map['so_tai_khoan'] ?? map['account_number'],
-      icon: getIcon(map['bieu_tuong'] ?? map['icon']),
+      icon: BieuTuongHelper.layIcon(map['bieu_tuong'] ?? map['icon']),
       mauSac: getColor(map['mau_sac'] ?? map['color']),
     );
   }
@@ -122,21 +116,7 @@ class DanhMuc {
     required this.mauSac,
   });
 
-  String get iconName {
-    if (icon.codePoint == Icons.shopping_cart.codePoint) return 'shopping_cart';
-    if (icon.codePoint == Icons.restaurant.codePoint) return 'restaurant';
-    if (icon.codePoint == Icons.directions_car.codePoint) return 'directions_car';
-    if (icon.codePoint == Icons.health_and_safety.codePoint) return 'health_and_safety';
-    if (icon.codePoint == Icons.movie.codePoint) return 'movie';
-    if (icon.codePoint == Icons.home.codePoint) return 'home';
-    if (icon.codePoint == Icons.school.codePoint) return 'school';
-    if (icon.codePoint == Icons.flight.codePoint) return 'flight';
-    if (icon.codePoint == Icons.payments.codePoint) return 'payments';
-    if (icon.codePoint == Icons.trending_up.codePoint) return 'trending_up';
-    if (icon.codePoint == Icons.sports_esports.codePoint) return 'sports_esports';
-    if (icon.codePoint == Icons.receipt_long.codePoint) return 'receipt_long';
-    return 'category';
-  }
+  String get iconName => BieuTuongHelper.layTenIcon(icon);
 
   Map<String, dynamic> toMap() {
     return {
@@ -149,22 +129,6 @@ class DanhMuc {
   }
 
   factory DanhMuc.fromMap(Map<String, dynamic> map) {
-    IconData getIcon(String? iconName) {
-      if (iconName == 'restaurant') return Icons.restaurant;
-      if (iconName == 'shopping_cart') return Icons.shopping_cart;
-      if (iconName == 'directions_car') return Icons.directions_car;
-      if (iconName == 'health_and_safety') return Icons.health_and_safety;
-      if (iconName == 'movie') return Icons.movie;
-      if (iconName == 'home') return Icons.home;
-      if (iconName == 'school') return Icons.school;
-      if (iconName == 'flight') return Icons.flight;
-      if (iconName == 'sports_esports') return Icons.sports_esports;
-      if (iconName == 'receipt_long') return Icons.receipt_long;
-      if (iconName == 'payments') return Icons.payments;
-      if (iconName == 'trending_up') return Icons.trending_up;
-      return Icons.category;
-    }
-
     Color getColor(String? hex) {
       if (hex == null || hex.isEmpty) return const Color(0xFF712AE2);
       hex = hex.replaceAll('#', '');
@@ -178,7 +142,7 @@ class DanhMuc {
       id: map['ma_danh_muc'] ?? map['category_id'] ?? map['id'],
       ten: map['ten_danh_muc'] ?? map['name'] ?? map['ten'] ?? '',
       loai: (map['loai_danh_muc'] ?? map['type']) == 'INCOME' ? LoaiGiaoDich.thuNhap : LoaiGiaoDich.chiTieu,
-      icon: getIcon(map['bieu_tuong'] ?? map['icon']),
+      icon: BieuTuongHelper.layIcon(map['bieu_tuong'] ?? map['icon']),
       mauSac: getColor(map['mau_sac'] ?? map['color']),
     );
   }

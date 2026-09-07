@@ -1,19 +1,59 @@
 import React from 'react';
-import { AlertTriangle, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Trash2, X, CheckCircle, PauseCircle, Lock, PlayCircle } from 'lucide-react';
 
 export default function ConfirmModal({
   isOpen,
   title = 'Xác nhận hành động',
   message = 'Bạn có chắc chắn muốn thực hiện hành động này không?',
   itemDetail = null,
-  confirmText = 'Xác nhận xoá',
+  confirmText = 'Xác nhận',
   cancelText = 'Huỷ bỏ',
   isDanger = true,
+  type = null, // 'danger' | 'warning' | 'success' | 'info'
+  icon: CustomIcon = null,
+  confirmIcon: ConfirmCustomIcon = null,
   isLoading = false,
   onConfirm,
   onClose
 }) {
   if (!isOpen) return null;
+
+  // Xác định theme màu dựa trên type hoặc isDanger
+  const effectiveType = type || (isDanger ? 'danger' : 'info');
+
+  let headerBg = '#FEF2F2';
+  let headerColor = '#EF4444';
+  let headerBorder = '1px solid #FEE2E2';
+  let confirmBtnClass = 'btn-danger';
+  let DefaultIcon = AlertTriangle;
+
+  if (effectiveType === 'warning') {
+    headerBg = '#FFFBEB';
+    headerColor = '#D97706';
+    headerBorder = '1px solid #FDE68A';
+    confirmBtnClass = 'btn-warning';
+    DefaultIcon = PauseCircle;
+  } else if (effectiveType === 'success') {
+    headerBg = '#ECFDF5';
+    headerColor = '#059669';
+    headerBorder = '1px solid #A7F3D0';
+    confirmBtnClass = 'btn-success';
+    DefaultIcon = CheckCircle;
+  } else if (effectiveType === 'info') {
+    headerBg = '#EFF6FF';
+    headerColor = '#2563EB';
+    headerBorder = '1px solid #BFDBFE';
+    confirmBtnClass = 'btn-primary';
+    DefaultIcon = PlayCircle;
+  } else if (effectiveType === 'lock') {
+    headerBg = '#FEF2F2';
+    headerColor = '#DC2626';
+    headerBorder = '1px solid #FEE2E2';
+    confirmBtnClass = 'btn-danger';
+    DefaultIcon = Lock;
+  }
+
+  const RenderIcon = CustomIcon || DefaultIcon;
 
   return (
     <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1100 }}>
@@ -29,16 +69,16 @@ export default function ConfirmModal({
                 width: 48, 
                 height: 48, 
                 borderRadius: '50%', 
-                background: isDanger ? '#FEF2F2' : '#EFF6FF', 
-                color: isDanger ? '#EF4444' : '#2563EB',
+                background: headerBg, 
+                color: headerColor,
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'center',
                 flexShrink: 0,
-                border: isDanger ? '1px solid #FEE2E2' : '1px solid #BFDBFE'
+                border: headerBorder
               }}
             >
-              <AlertTriangle size={24} />
+              <RenderIcon size={24} />
             </div>
 
             <div style={{ flex: 1 }}>
@@ -55,7 +95,7 @@ export default function ConfirmModal({
                 </button>
               </div>
 
-              <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: 1.5 }}>
+              <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
                 {message}
               </p>
 
@@ -98,12 +138,17 @@ export default function ConfirmModal({
           </button>
           <button 
             type="button" 
-            className={`btn ${isDanger ? 'btn-danger' : 'btn-primary'} btn-sm`}
+            className={`btn ${confirmBtnClass} btn-sm`}
             onClick={onConfirm}
             disabled={isLoading}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600 }}
           >
-            {isDanger && <Trash2 size={14} />}
-            <span>{isLoading ? 'Đang xoá...' : confirmText}</span>
+            {ConfirmCustomIcon ? (
+              <ConfirmCustomIcon size={14} />
+            ) : (
+              effectiveType === 'danger' ? <Trash2 size={14} /> : null
+            )}
+            <span>{isLoading ? 'Đang xử lý...' : confirmText}</span>
           </button>
         </div>
       </div>

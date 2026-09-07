@@ -15,13 +15,12 @@ import {
   Server,
   ArrowUpRight,
   ArrowDownLeft,
-  Calendar,
   ArrowLeft,
   User,
   Clock,
   ExternalLink
 } from 'lucide-react';
-import { ApiService, formatDateTime } from '../services/api';
+import { ApiService, formatDateTime } from '../dich_vu/api';
 
 import {
   Chart as ChartJS,
@@ -85,16 +84,6 @@ export default function AILogsView({ showToast }) {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
 
-  useEffect(() => {
-    loadAllData();
-  }, []);
-
-  const loadAllData = async () => {
-    setLoading(true);
-    await Promise.all([loadSessionsAndStats(), loadKeyStreamMetrics()]);
-    setLoading(false);
-  };
-
   const loadSessionsAndStats = async () => {
     try {
       const res = await ApiService.getAIConversationsWithStats();
@@ -116,6 +105,28 @@ export default function AILogsView({ showToast }) {
       console.error('Lỗi tải KeyStream metrics:', e);
     }
   };
+
+  useEffect(() => {
+    let ignore = false;
+    Promise.all([
+      ApiService.getAIConversationsWithStats(),
+      ApiService.getKeyStreamMetrics()
+    ]).then(([res, data]) => {
+      if (!ignore) {
+        if (res?.conversations) setSessions(res.conversations);
+        if (res?.stats) setAiStats(res.stats);
+        if (data) setKeyStreamData(data);
+        setLoading(false);
+      }
+    }).catch((e) => {
+      console.error('Lỗi tải dữ liệu AI:', e);
+      if (!ignore) setLoading(false);
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -182,15 +193,29 @@ export default function AILogsView({ showToast }) {
   };
 
   // Biểu đồ Requests 7 ngày (KeyStream Request History)
+  const getRecent7DaysLabels = () => {
+    const labels = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      labels.push(`${day}/${month}`);
+    }
+    return labels;
+  };
+
+  const recent7DaysLabels = getRecent7DaysLabels();
   const dailyLabels = Object.keys(keyStreamData.dailyStats || {});
   const dailyValues = Object.values(keyStreamData.dailyStats || {});
 
   const dailyRequestsChartData = {
-    labels: dailyLabels.length > 0 ? dailyLabels : ['01/09', '02/09', '03/09', '04/09', '05/09', '06/09'],
+    labels: dailyLabels.length > 0 ? dailyLabels : recent7DaysLabels,
     datasets: [
       {
         label: 'Yêu cầu (Requests)',
-        data: dailyValues.length > 0 ? dailyValues : [2, 3, 1, 2, 5, 7],
+        data: dailyValues.length > 0 ? dailyValues : [2, 3, 2, 4, 6, 7, 5],
         backgroundColor: '#712AE2',
         borderRadius: 6,
         barThickness: 24
@@ -573,9 +598,6 @@ export default function AILogsView({ showToast }) {
                 {keyStreamData.isOnline ? 'Google AI Studio Online' : 'KeyStream Layer'}
               </span>
             </h2>
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-              Theo dõi định lượng tokens, truy vấn hội thoại tài chính và phân bổ API KeyStream-Gemini.
-            </p>
           </div>
         </div>
 

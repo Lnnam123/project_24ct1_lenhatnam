@@ -6,15 +6,10 @@ import {
   Trash2, 
   Search, 
   Check, 
-  Sparkles, 
-  HelpCircle,
-  Layers,
-  User,
-  ShieldCheck,
-  Filter
+  Layers
 } from 'lucide-react';
-import Modal from '../components/Modal';
-import { ApiService } from '../services/api';
+import Modal from '../thanh_phan/HopThoai';
+import { ApiService } from '../dich_vu/api';
 
 // Danh mục icon Google Material Symbols / Icons phong phú & đa dạng
 const GOOGLE_FONT_ICONS = [
@@ -145,16 +140,25 @@ export default function CategoriesView({ showToast }) {
   const [iconGroupFilter, setIconGroupFilter] = useState('ALL');
   const [iconSearch, setIconSearch] = useState('');
 
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
-  const loadCategories = async () => {
-    setLoading(true);
+  const loadCategories = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     const data = await ApiService.getCategories();
     setCategories(data);
     setLoading(false);
   };
+
+  useEffect(() => {
+    let ignore = false;
+    ApiService.getCategories().then((data) => {
+      if (!ignore) {
+        setCategories(data);
+        setLoading(false);
+      }
+    });
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const handleOpenAdd = () => {
     setEditingCategory(null);
@@ -249,8 +253,6 @@ export default function CategoriesView({ showToast }) {
     return true;
   });
 
-  const countSystem = categories.filter(c => c.user_id === null).length;
-  const countUser = categories.filter(c => c.user_id !== null).length;
   const countExpense = categories.filter(c => c.type === 'EXPENSE').length;
   const countIncome = categories.filter(c => c.type === 'INCOME').length;
 
@@ -260,12 +262,7 @@ export default function CategoriesView({ showToast }) {
       <div className="card-header" style={{ flexWrap: 'wrap', gap: 16 }}>
         <div className="card-title">
           <Tags size={22} color="var(--primary)" />
-          <div>
-            <h3>Quản Lý Danh Mục Thu & Chi</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
-              Phân loại danh mục mặc định hệ thống và danh mục do người dùng tự tạo
-            </p>
-          </div>
+          <h3>Quản Lý Danh Mục Mẫu Hệ Thống</h3>
         </div>
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -273,7 +270,7 @@ export default function CategoriesView({ showToast }) {
             <Search size={16} />
             <input 
               type="text" 
-              placeholder="Tìm kiếm danh mục..." 
+              placeholder="Tìm kiếm danh mục mẫu..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -281,7 +278,7 @@ export default function CategoriesView({ showToast }) {
 
           <button className="btn btn-primary" onClick={handleOpenAdd}>
             <Plus size={16} />
-            <span>Thêm Danh Mục Mới</span>
+            <span>Thêm Danh Mục Mẫu</span>
           </button>
         </div>
       </div>
@@ -293,24 +290,8 @@ export default function CategoriesView({ showToast }) {
           onClick={() => setScopeFilter('ALL')}
         >
           <Layers size={15} />
-          <span>Tất cả</span>
+          <span>Tất cả danh mục mẫu</span>
           <span className="segmented-count">{categories.length}</span>
-        </button>
-        <button
-          className={`segmented-tab ${scopeFilter === 'SYSTEM' ? 'active' : ''}`}
-          onClick={() => setScopeFilter('SYSTEM')}
-        >
-          <ShieldCheck size={15} />
-          <span>Mặc định hệ thống</span>
-          <span className="segmented-count">{countSystem}</span>
-        </button>
-        <button
-          className={`segmented-tab ${scopeFilter === 'USER' ? 'active' : ''}`}
-          onClick={() => setScopeFilter('USER')}
-        >
-          <User size={15} />
-          <span>Người dùng thêm</span>
-          <span className="segmented-count">{countUser}</span>
         </button>
         <button
           className={`segmented-tab ${scopeFilter === 'EXPENSE' ? 'active' : ''}`}
@@ -582,8 +563,19 @@ export default function CategoriesView({ showToast }) {
                 padding: '4px 2px'
               }}>
                 {filteredIcons.length === 0 ? (
-                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: 'var(--text-light)', fontSize: 13 }}>
-                    Không tìm thấy icon nào phù hợp với từ khoá "{iconSearch}"
+                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '16px', color: 'var(--text-light)', fontSize: 13 }}>
+                    <p style={{ margin: 0 }}>Không tìm thấy icon nào trong danh mục mẫu với từ khoá "{iconSearch}"</p>
+                    {iconSearch.trim() && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                        onClick={() => setFormIcon(iconSearch.trim().toLowerCase())}
+                      >
+                        <span className="material-symbols-rounded" style={{ fontSize: 18 }}>{iconSearch.trim().toLowerCase()}</span>
+                        <span>Sử dụng biểu tượng "{iconSearch.trim().toLowerCase()}"</span>
+                      </button>
+                    )}
                   </div>
                 ) : (
                   filteredIcons.map(ic => {

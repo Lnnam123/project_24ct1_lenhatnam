@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../mo_hinh/du_lieu.dart';
 import '../chu_de/mau_sac.dart';
-import '../thanh_phan/nut_ai_chat_floating.dart';
 
 class ManHinhViTien extends StatefulWidget {
   static const String tenTrang = 'Tài khoản';
@@ -92,11 +91,9 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          RefreshIndicator(
-            onRefresh: widget.onRefresh,
-            child: SingleChildScrollView(
+      body: RefreshIndicator(
+        onRefresh: widget.onRefresh,
+        child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -384,13 +381,7 @@ class _ManHinhViTienState extends State<ManHinhViTien> {
           ],
         ),
       ),
-      ),
-          NutAiChatFloating(
-            nguoiDung: widget.nguoiDung,
-            heroTag: 'ai_chat_vi_tien',
-          ),
-        ],
-      ),
+    ),
     );
   }
 }

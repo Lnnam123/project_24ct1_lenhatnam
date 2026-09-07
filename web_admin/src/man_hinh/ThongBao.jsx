@@ -16,9 +16,9 @@ import {
   Check,
   Smartphone
 } from 'lucide-react';
-import Modal from '../components/Modal';
-import ConfirmModal from '../components/ConfirmModal';
-import { ApiService } from '../services/api';
+import Modal from '../thanh_phan/HopThoai';
+import ConfirmModal from '../thanh_phan/HopThoaiXacNhan';
+import { ApiService } from '../dich_vu/api';
 
 export default function NotificationsView({ showToast }) {
   const [notifications, setNotifications] = useState([]);
@@ -261,13 +261,10 @@ export default function NotificationsView({ showToast }) {
       <div className="card" style={{ padding: '20px 24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-main)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
               <BellRing size={22} color="var(--primary)" />
               Quản Lý Thông Báo Hệ Thống
             </h2>
-            <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: 0 }}>
-              Giám sát toàn bộ thông báo đã gửi, lịch sử nhận tin và phát thông báo mới tới người dùng di động
-            </p>
           </div>
 
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>

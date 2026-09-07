@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../mo_hinh/du_lieu.dart';
+import '../tien_ich/bieu_tuong_helper.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -36,6 +37,14 @@ class DatabaseHelper {
           .maybeSingle();
 
       if (response != null) {
+        final trangThai = (response['trang_thai'] ?? 'ACTIVE').toString().toUpperCase();
+        if (trangThai == 'LOCKED') {
+          throw Exception('Tài khoản của bạn đã bị khoá bởi Quản trị viên!');
+        }
+        if (trangThai == 'SUSPENDED') {
+          throw Exception('Tài khoản của bạn đang tạm thời bị ngưng hoạt động!');
+        }
+
         return NguoiDung(
           id: response['ma_nguoi_dung'] ?? response['user_id'],
           hoTen: response['ho_ten'] ?? response['full_name'],
@@ -46,8 +55,27 @@ class DatabaseHelper {
       }
     } catch (e) {
       debugPrint('Lỗi login: $e');
+      rethrow;
     }
     return null;
+  }
+
+  Future<String> checkUserStatus(int userId) async {
+    try {
+      final response = await _supabase
+          .from('nguoi_dung')
+          .select('trang_thai')
+          .eq('ma_nguoi_dung', userId)
+          .maybeSingle();
+      if (response != null) {
+        return (response['trang_thai'] ?? 'ACTIVE').toString().toUpperCase();
+      } else {
+        return 'DELETED'; // Tài khoản không còn tồn tại hoặc đã bị xoá
+      }
+    } catch (e) {
+      debugPrint('Lỗi checkUserStatus: $e');
+    }
+    return 'ACTIVE';
   }
 
   Future<bool> changePassword(int userId, String oldPassword, String newPassword) async {
@@ -806,28 +834,7 @@ class DatabaseHelper {
 
   // --- Helper Methods ---
   IconData _getIconFromString(String? iconName) {
-    if (iconName == null) return Icons.category;
-    switch (iconName) {
-      case 'restaurant': return Icons.restaurant;
-      case 'shopping_cart': return Icons.shopping_cart;
-      case 'shopping_bag': return Icons.shopping_bag;
-      case 'payments': return Icons.payments;
-      case 'attach_money': return Icons.attach_money;
-      case 'directions_car': return Icons.directions_car;
-      case 'movie': return Icons.movie;
-      case 'more_time': return Icons.more_time;
-      case 'account_balance_wallet': return Icons.account_balance_wallet;
-      case 'credit_card': return Icons.credit_card;
-      case 'savings': return Icons.savings;
-      case 'health_and_safety': return Icons.health_and_safety;
-      case 'home': return Icons.home;
-      case 'school': return Icons.school;
-      case 'flight': return Icons.flight;
-      case 'sports_esports': return Icons.sports_esports;
-      case 'trending_up': return Icons.trending_up;
-      case 'receipt_long': return Icons.receipt_long;
-      default: return Icons.category;
-    }
+    return BieuTuongHelper.layIcon(iconName);
   }
 
   Color _getColorFromString(String? hexColor) {

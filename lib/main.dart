@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,6 +17,7 @@ import 'thanh_phan/modal_quan_ly_vi_tien.dart';
 import 'du_lieu/database_helper.dart';
 import 'dich_vu/update_service.dart';
 import 'dich_vu/notification_service.dart';
+import 'thanh_phan/nut_ai_chat_floating.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -97,10 +99,15 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
   bool _coThongBaoChuaDoc = false;
   NguoiDung? _nguoiDungHienTai;
 
+  RealtimeChannel? _userStatusRealtimeChannel;
+  Timer? _heartbeatTimer;
+  bool _isShowingBlockDialog = false;
+
   @override
   void initState() {
     super.initState();
     _taiDuLieuTuDatabase();
+    _langNgheTrangThaiTaiKhoanRealtime();
 
     // Tự động kiểm tra cập nhật khi mở app
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -109,10 +116,70 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
     });
   }
 
+  @override
+  void dispose() {
+    _heartbeatTimer?.cancel();
+    if (_userStatusRealtimeChannel != null) {
+      Supabase.instance.client.removeChannel(_userStatusRealtimeChannel!);
+    }
+    super.dispose();
+  }
+
+  void _langNgheTrangThaiTaiKhoanRealtime() {
+    // 1. Lắng nghe tức thì qua Supabase Realtime WebSocket
+    _userStatusRealtimeChannel = Supabase.instance.client
+        .channel('user_status_realtime_${widget.nguoiDung.id}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'nguoi_dung',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'ma_nguoi_dung',
+            value: widget.nguoiDung.id,
+          ),
+          callback: (payload) {
+            debugPrint('Realtime User Status Change: ${payload.eventType}');
+            if (_isShowingBlockDialog || !mounted) return;
+
+            if (payload.eventType == PostgresChangeEvent.delete) {
+              _hienThiDialogKhoaTaiKhoan('DELETED');
+            } else if (payload.eventType == PostgresChangeEvent.update) {
+              final newRecord = payload.newRecord;
+              final newStatus = (newRecord['trang_thai'] ?? 'ACTIVE').toString().toUpperCase();
+              if (newStatus != 'ACTIVE') {
+                _hienThiDialogKhoaTaiKhoan(newStatus);
+              }
+            }
+          },
+        )
+        .subscribe();
+
+    // 2. Heartbeat polling 3 giây song song dự phòng mất kết nối socket
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
+      if (_isShowingBlockDialog || !mounted) return;
+      final status = await DatabaseHelper.instance.checkUserStatus(widget.nguoiDung.id);
+      if (status != 'ACTIVE' && mounted && !_isShowingBlockDialog) {
+        _hienThiDialogKhoaTaiKhoan(status);
+      }
+    });
+  }
+
   Future<void> _taiDuLieuTuDatabase() async {
     setState(() => _isLoading = true);
 
     final db = DatabaseHelper.instance;
+
+    // Kiểm tra trạng thái tài khoản người dùng
+    final userStatus = await db.checkUserStatus(widget.nguoiDung.id);
+    if (userStatus != 'ACTIVE') {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _hienThiDialogKhoaTaiKhoan(userStatus);
+      }
+      return;
+    }
+
     // Tối ưu hóa: Tải dữ liệu song song
     final results = await Future.wait([
       db.getWallets(widget.nguoiDung.id),
@@ -145,6 +212,107 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
         _isLoading = false;
       });
     }
+  }
+
+  void _hienThiDialogKhoaTaiKhoan(String status) {
+    if (_isShowingBlockDialog || !mounted) return;
+    _isShowingBlockDialog = true;
+    _heartbeatTimer?.cancel();
+
+    String title = 'Tài khoản không khả dụng';
+    String message = 'Bạn không thể tiếp tục sử dụng ứng dụng với tài khoản này.';
+    IconData icon = Icons.info_outline;
+    Color iconColor = Colors.red;
+
+    if (status == 'LOCKED') {
+      title = 'Tài khoản đã bị khoá';
+      message = 'Tài khoản của bạn đã bị Quản trị viên khoá quyền truy cập. Phiên đăng nhập hiện tại đã kết thúc. Vui lòng liên hệ bộ phận hỗ trợ nếu cần giải đáp.';
+      icon = Icons.lock_outline_rounded;
+      iconColor = Colors.red.shade700;
+    } else if (status == 'SUSPENDED') {
+      title = 'Tài khoản tạm ngưng';
+      message = 'Tài khoản của bạn đang trong trạng thái tạm ngưng hoạt động. Bạn tạm thời không thể thao tác trên hệ thống cho đến khi được kích hoạt lại.';
+      icon = Icons.pause_circle_outline_rounded;
+      iconColor = Colors.orange.shade800;
+    } else if (status == 'DELETED') {
+      title = 'Tài khoản đã bị xoá';
+      message = 'Tài khoản của bạn đã bị xoá khỏi hệ thống CoinTap.';
+      icon = Icons.delete_outline_rounded;
+      iconColor = Colors.red.shade700;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          contentPadding: const EdgeInsets.all(24),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 32, color: iconColor),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.manrope(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: MauSac.onSurface,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.manrope(
+                  fontSize: 13.5,
+                  color: MauSac.onSurfaceVariant,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: iconColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.clear();
+                    if (!mounted) return;
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const ManHinhDangNhap(allowRedirect: false)),
+                      (route) => false,
+                    );
+                  },
+                  child: Text(
+                    'Đăng xuất ngay',
+                    style: GoogleFonts.manrope(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _kiemTraVaCanhBaoNganSach() async {
@@ -648,7 +816,15 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
     }
 
     return Scaffold(
-      body: bodyContent,
+      body: Stack(
+        children: [
+          bodyContent,
+          if (_chiMucHienTai != 3)
+            NutAiChatFloating(
+              nguoiDung: nguoiDung,
+            ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: MauSac.primary,
         foregroundColor: Colors.white,

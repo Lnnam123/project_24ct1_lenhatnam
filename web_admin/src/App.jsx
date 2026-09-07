@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from './components/Sidebar';
-import Topbar from './components/Topbar';
-import DashboardView from './views/DashboardView';
-import UsersView from './views/UsersView';
-import AdminsView from './views/AdminsView';
-import TransactionsView from './views/TransactionsView';
-import CategoriesView from './views/CategoriesView';
-import AILogsView from './views/AILogsView';
-import NotificationsView from './views/NotificationsView';
-import LoginView from './views/LoginView';
-import { supabase } from './services/supabase';
+import Sidebar from './thanh_phan/ThanhBen';
+import Topbar from './thanh_phan/ThanhTren';
+import DashboardView from './man_hinh/TongQuan';
+import UsersView from './man_hinh/NguoiDung';
+import AdminsView from './man_hinh/QuanTriVien';
+import CategoriesView from './man_hinh/DanhMuc';
+import AILogsView from './man_hinh/NhatKyAI';
+import NotificationsView from './man_hinh/ThongBao';
+import LoginView from './man_hinh/DangNhap';
+import { supabase } from './dich_vu/supabase';
 import { CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 export default function App() {
@@ -98,14 +97,12 @@ export default function App() {
   };
 
   const titleMap = {
-    dashboard: { title: 'Tổng Quan Hệ Thống', desc: 'Số liệu thống kê thời gian thực và phân tích dòng tiền' },
-    users: { title: 'Quản Lý Người Dùng', desc: 'Danh sách tài khoản, trạng thái và quản lý dữ liệu người dùng' },
-    admins: { title: 'Quản Lý Quản Trị Viên', desc: 'Danh sách và phân quyền tài khoản quản trị hệ thống' },
-    transactions: { title: 'Giám Sát Giao Dịch', desc: 'Toàn bộ biến động dòng tiền thu - chi trên toàn hệ thống' },
-    categories: { title: 'Danh Mục Mặc Định', desc: 'Quản lý các nhóm chi tiêu & thu nhập dùng chung cho hệ thống' },
-
-    ai_logs: { title: 'Giám Sát Trợ Lý AI', desc: 'Nhật ký các cuộc hội thoại và câu hỏi tư vấn tài chính của người dùng' },
-    notifications: { title: 'Quản Lý Thông Báo', desc: 'Quản lý lịch sử thông báo hệ thống và phát thông báo mới tới người dùng di động' }
+    dashboard: { title: 'Tổng Quan Hệ Thống' },
+    users: { title: 'Tài Khoản Người Dùng' },
+    admins: { title: 'Quản Lý Quản Trị Viên' },
+    categories: { title: 'Danh Mục Mẫu Hệ Thống' },
+    ai_logs: { title: 'Giám Sát Trợ Lý AI' },
+    notifications: { title: 'Quản Lý Thông Báo' }
   };
 
   const showToast = (message, type = 'success') => {
@@ -187,9 +184,7 @@ export default function App() {
       <div className={`main-content ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <Topbar
           title={headerInfo.title}
-          description={headerInfo.desc}
           onRefresh={handleRefresh}
-          user={currentUser}
           onLogout={handleLogout}
           onToggleMenu={handleToggleMenu}
         />
@@ -198,7 +193,6 @@ export default function App() {
           {currentTab === 'dashboard' && <DashboardView key={refreshTrigger} onNavigate={setCurrentTab} />}
           {currentTab === 'users' && <UsersView key={refreshTrigger} showToast={showToast} />}
           {currentTab === 'admins' && <AdminsView key={refreshTrigger} showToast={showToast} currentUser={currentUser} />}
-          {currentTab === 'transactions' && <TransactionsView key={refreshTrigger} showToast={showToast} />}
           {currentTab === 'categories' && <CategoriesView key={refreshTrigger} showToast={showToast} />}
           {currentTab === 'ai_logs' && <AILogsView key={refreshTrigger} showToast={showToast} />}
           {currentTab === 'notifications' && <NotificationsView key={refreshTrigger} showToast={showToast} />}

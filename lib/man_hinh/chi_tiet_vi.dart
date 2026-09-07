@@ -86,20 +86,8 @@ class ManHinhChiTietVi extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: '${_dinhDangTien(tongSoDu).replaceAll('₫', '').trim()} ',
-                              ),
-                              const TextSpan(
-                                text: 'đ',
-                                style: TextStyle(
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
-                            ],
-                          ),
+                        Text(
+                          '${NumberFormat('#,###', 'vi_VN').format(tongSoDu)} đ',
                           style: GoogleFonts.manrope(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,

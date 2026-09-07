@@ -2,7 +2,6 @@ import React from 'react';
 import { 
   PieChart, 
   Users, 
-  Receipt, 
   Shapes, 
   Bot, 
   Bell,
@@ -24,13 +23,12 @@ export default function Sidebar({
   onCloseMobile
 }) {
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: PieChart, section: 'Tổng quan' },
-    { id: 'users', label: 'Người dùng', icon: Users, section: 'Quản lý hệ thống' },
+    { id: 'dashboard', label: 'Tổng quan hệ thống', icon: PieChart, section: 'Tổng quan' },
+    { id: 'users', label: 'Tài khoản người dùng', icon: Users, section: 'Quản trị hệ thống' },
     { id: 'admins', label: 'Quản trị viên', icon: ShieldCheck },
-    { id: 'transactions', label: 'Giám sát giao dịch', icon: Receipt },
-    { id: 'categories', label: 'Danh mục mẫu', icon: Shapes },
-    { id: 'ai_logs', label: 'Nhật ký Trợ lý AI', icon: Bot, section: 'Trợ lý & Dịch vụ' },
-    { id: 'notifications', label: 'Quản lý thông báo', icon: Bell },
+    { id: 'categories', label: 'Danh mục mẫu hệ thống', icon: Shapes },
+    { id: 'ai_logs', label: 'Giám sát Trợ lý AI', icon: Bot, section: 'Dịch vụ & Vận hành' },
+    { id: 'notifications', label: 'Thông báo hệ thống', icon: Bell },
   ];
 
   let currentSection = null;

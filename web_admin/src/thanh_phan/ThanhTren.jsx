@@ -3,9 +3,7 @@ import { RefreshCw, LogOut, Menu } from 'lucide-react';
 
 export default function Topbar({ 
   title, 
-  description, 
   onRefresh, 
-  user, 
   onLogout,
   onToggleMenu
 }) {
@@ -23,7 +21,6 @@ export default function Topbar({
 
         <div className="page-title">
           <h2>{title}</h2>
-          {description && <p>{description}</p>}
         </div>
       </div>
 

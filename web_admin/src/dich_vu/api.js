@@ -7,7 +7,13 @@ export const formatCurrency = (amount) => {
 
 export const formatDateTime = (dateStr) => {
   if (!dateStr) return 'N/A';
-  const d = new Date(dateStr);
+  let cleanStr = String(dateStr).trim();
+  // Nếu chuỗi thời gian chứa timezone offset lệch UTC (+00:00 hoặc Z) khi lưu giờ địa phương,
+  // loại bỏ hậu tố để Javascript diễn giải đúng theo thời gian thực tế của người dùng
+  if (cleanStr.includes('T') && (cleanStr.endsWith('+00:00') || cleanStr.endsWith('+00') || cleanStr.endsWith('Z'))) {
+    cleanStr = cleanStr.replace(/(\+00:00|\+00|Z)$/, '');
+  }
+  const d = new Date(cleanStr);
   if (isNaN(d.getTime())) return dateStr;
   return new Intl.DateTimeFormat('vi-VN', {
     day: '2-digit',
@@ -460,7 +466,11 @@ export const ApiService = {
         const countByDay = {};
         recentMsgs.forEach(m => {
           if (!m.ngay_tao) return;
-          const d = new Date(m.ngay_tao);
+          let cleanStr = String(m.ngay_tao).trim();
+          if (cleanStr.includes('T') && (cleanStr.endsWith('+00:00') || cleanStr.endsWith('+00') || cleanStr.endsWith('Z'))) {
+            cleanStr = cleanStr.replace(/(\+00:00|\+00|Z)$/, '');
+          }
+          const d = new Date(cleanStr);
           const day = String(d.getDate()).padStart(2, '0');
           const month = String(d.getMonth() + 1).padStart(2, '0');
           const key = `${day}/${month}`;

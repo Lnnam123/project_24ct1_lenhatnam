@@ -140,7 +140,11 @@ export default function NotificationsView({ showToast }) {
   const formatDateTime = (isoString) => {
     if (!isoString) return '--';
     try {
-      const d = new Date(isoString);
+      let cleanStr = String(isoString).trim();
+      if (cleanStr.includes('T') && (cleanStr.endsWith('+00:00') || cleanStr.endsWith('+00') || cleanStr.endsWith('Z'))) {
+        cleanStr = cleanStr.replace(/(\+00:00|\+00|Z)$/, '');
+      }
+      const d = new Date(cleanStr);
       return d.toLocaleString('vi-VN', {
         day: '2-digit',
         month: '2-digit',

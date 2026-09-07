@@ -23,25 +23,25 @@ class NguoiDung {
 
   Map<String, dynamic> toMap() {
     return {
-      'user_id': id,
-      'full_name': hoTen,
+      'ma_nguoi_dung': id,
+      'ho_ten': hoTen,
       'email': email,
-      'phone_number': soDienThoai,
-      'password_hash': matKhau,
-      'avatar_url': avatarUrl,
-      'currency': donViTienTe,
+      'so_dien_thoai': soDienThoai,
+      'mat_khau': matKhau,
+      'anh_dai_dien': avatarUrl,
+      'don_vi_tien_te': donViTienTe,
     };
   }
 
   factory NguoiDung.fromMap(Map<String, dynamic> map) {
     return NguoiDung(
-      id: map['user_id'],
-      hoTen: map['full_name'],
-      email: map['email'],
-      soDienThoai: map['phone_number'] ?? '',
-      matKhau: map['password_hash'],
-      avatarUrl: map['avatar_url'] ?? '',
-      donViTienTe: map['currency'] ?? 'VND',
+      id: map['ma_nguoi_dung'] ?? map['user_id'],
+      hoTen: map['ho_ten'] ?? map['full_name'] ?? '',
+      email: map['email'] ?? '',
+      soDienThoai: map['so_dien_thoai'] ?? map['phone_number'] ?? '',
+      matKhau: map['mat_khau'] ?? map['password_hash'] ?? '',
+      avatarUrl: map['anh_dai_dien'] ?? map['avatar_url'] ?? '',
+      donViTienTe: map['don_vi_tien_te'] ?? map['currency'] ?? 'VND',
     );
   }
 }
@@ -67,14 +67,14 @@ class ViTien {
 
   Map<String, dynamic> toMap(int userId) {
     return {
-      'wallet_id': id,
-      'user_id': userId,
-      'wallet_name': tenVi,
-      'wallet_type': loaiVi,
-      'balance': soDu,
+      'ma_vi': id,
+      'ma_nguoi_dung': userId,
+      'ten_vi': tenVi,
+      'loai_vi': loaiVi,
+      'so_du': soDu,
       'account_number': soTaiKhoan,
-      'icon': icon.codePoint.toString(),
-      'color': '#${mauSac.toARGB32().toRadixString(16).substring(2).toUpperCase()}',
+      'bieu_tuong': icon.codePoint.toString(),
+      'mau_sac': '#${mauSac.toARGB32().toRadixString(16).substring(2).toUpperCase()}',
     };
   }
 
@@ -96,13 +96,13 @@ class ViTien {
     }
 
     return ViTien(
-      id: map['wallet_id'],
-      tenVi: map['wallet_name'],
-      loaiVi: map['wallet_type'] ?? 'CASH',
-      soDu: (map['balance'] as num?)?.toDouble() ?? 0.0,
-      soTaiKhoan: map['account_number'],
-      icon: getIcon(map['icon']),
-      mauSac: getColor(map['color']),
+      id: map['ma_vi'] ?? map['wallet_id'],
+      tenVi: map['ten_vi'] ?? map['wallet_name'] ?? '',
+      loaiVi: map['loai_vi'] ?? map['wallet_type'] ?? 'CASH',
+      soDu: ((map['so_du'] ?? map['balance']) as num?)?.toDouble() ?? 0.0,
+      soTaiKhoan: map['so_tai_khoan'] ?? map['account_number'],
+      icon: getIcon(map['bieu_tuong'] ?? map['icon']),
+      mauSac: getColor(map['mau_sac'] ?? map['color']),
     );
   }
 }
@@ -140,11 +140,11 @@ class DanhMuc {
 
   Map<String, dynamic> toMap() {
     return {
-      'category_id': id,
-      'name': ten,
-      'type': loai == LoaiGiaoDich.chiTieu ? 'EXPENSE' : 'INCOME',
-      'icon': iconName,
-      'color': '#${mauSac.toARGB32().toRadixString(16).substring(2).toUpperCase()}',
+      'ma_danh_muc': id,
+      'ten_danh_muc': ten,
+      'loai_danh_muc': loai == LoaiGiaoDich.chiTieu ? 'EXPENSE' : 'INCOME',
+      'bieu_tuong': iconName,
+      'mau_sac': '#${mauSac.toARGB32().toRadixString(16).substring(2).toUpperCase()}',
     };
   }
 
@@ -175,11 +175,11 @@ class DanhMuc {
     }
 
     return DanhMuc(
-      id: map['category_id'] ?? map['id'],
-      ten: map['name'] ?? map['ten'] ?? '',
-      loai: map['type'] == 'INCOME' ? LoaiGiaoDich.thuNhap : LoaiGiaoDich.chiTieu,
-      icon: getIcon(map['icon']),
-      mauSac: getColor(map['color']),
+      id: map['ma_danh_muc'] ?? map['category_id'] ?? map['id'],
+      ten: map['ten_danh_muc'] ?? map['name'] ?? map['ten'] ?? '',
+      loai: (map['loai_danh_muc'] ?? map['type']) == 'INCOME' ? LoaiGiaoDich.thuNhap : LoaiGiaoDich.chiTieu,
+      icon: getIcon(map['bieu_tuong'] ?? map['icon']),
+      mauSac: getColor(map['mau_sac'] ?? map['color']),
     );
   }
 }
@@ -207,27 +207,27 @@ class GiaoDich {
 
   Map<String, dynamic> toMap(int userId) {
     return {
-      if (id != null) 'transaction_id': id,
-      'user_id': userId,
-      'wallet_id': viTien.id,
-      'category_id': danhMuc.id,
-      'amount': soTien,
-      'type': loai == LoaiGiaoDich.chiTieu ? 'EXPENSE' : 'INCOME',
-      'transaction_date': ngay.toIso8601String(),
-      'note': tieuDe,
+      if (id != null) 'ma_giao_dich': id,
+      'ma_nguoi_dung': userId,
+      'ma_vi': viTien.id,
+      'ma_danh_muc': danhMuc.id,
+      'so_tien': soTien,
+      'loai_giao_dich': loai == LoaiGiaoDich.chiTieu ? 'EXPENSE' : 'INCOME',
+      'ngay_giao_dich': ngay.toIso8601String(),
+      'ghi_chu': tieuDe,
     };
   }
 
   factory GiaoDich.fromMap(Map<String, dynamic> map, DanhMuc danhMuc, ViTien viTien) {
     return GiaoDich(
-      id: map['transaction_id'],
-      tieuDe: map['note'] ?? '',
-      soTien: (map['amount'] as num?)?.toDouble() ?? 0.0,
-      loai: map['type'] == 'INCOME' ? LoaiGiaoDich.thuNhap : LoaiGiaoDich.chiTieu,
+      id: map['ma_giao_dich'] ?? map['transaction_id'],
+      tieuDe: map['ghi_chu'] ?? map['note'] ?? '',
+      soTien: ((map['so_tien'] ?? map['amount']) as num?)?.toDouble() ?? 0.0,
+      loai: (map['loai_giao_dich'] ?? map['type']) == 'INCOME' ? LoaiGiaoDich.thuNhap : LoaiGiaoDich.chiTieu,
       danhMuc: danhMuc,
       viTien: viTien,
-      ngay: DateTime.parse(map['transaction_date']),
-      ghiChu: map['note'],
+      ngay: DateTime.parse(map['ngay_giao_dich'] ?? map['transaction_date']),
+      ghiChu: map['ghi_chu'] ?? map['note'],
     );
   }
 }
@@ -271,12 +271,12 @@ class ThongBao {
 
   factory ThongBao.fromMap(Map<String, dynamic> map) {
     return ThongBao(
-      id: map['notification_id'],
-      tieuDe: map['title'] ?? '',
-      noiDung: map['message'] ?? '',
-      loai: map['type'] ?? 'SYSTEM',
-      daDoc: (map['is_read'] == 1),
-      ngayTao: DateTime.parse(map['created_at']),
+      id: map['ma_thong_bao'] ?? map['notification_id'],
+      tieuDe: map['tieu_de'] ?? map['title'] ?? '',
+      noiDung: map['noi_dung'] ?? map['content'] ?? map['message'] ?? '',
+      loai: map['loai_thong_bao'] ?? map['type'] ?? 'SYSTEM',
+      daDoc: (map['da_doc'] == true || map['da_doc'] == 1 || map['is_read'] == true || map['is_read'] == 1),
+      ngayTao: DateTime.parse(map['ngay_tao'] ?? map['created_at']),
     );
   }
 }

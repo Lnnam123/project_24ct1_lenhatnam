@@ -38,8 +38,14 @@ class NotificationService {
 
   static Future<void> _checkWelcomeNotification(int userId, DatabaseHelper db) async {
     try {
-      final response = await Supabase.instance.client.from('users').select('created_at').eq('user_id', userId).single();
-      final createdAt = response['created_at'] != null ? DateTime.parse(response['created_at']) : DateTime.now();
+      final response = await Supabase.instance.client
+          .from('nguoi_dung')
+          .select('ngay_tao')
+          .eq('ma_nguoi_dung', userId)
+          .single();
+      final createdAt = response['ngay_tao'] != null
+          ? DateTime.parse(response['ngay_tao'])
+          : DateTime.now();
       
       await db.insertNotification(
         userId,

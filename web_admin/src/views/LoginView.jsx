@@ -43,21 +43,21 @@ export default function LoginView({ onLoginSuccess }) {
     setLoading(true);
 
     try {
-      // 1. Kiểm tra xác thực trực tiếp từ Bảng riêng 'admins' trên Supabase
+      // 1. Kiểm tra xác thực trực tiếp từ Bảng riêng 'quan_tri_vien' trên Supabase
       const { data: adminUser, error: adminErr } = await supabase
-        .from('admins')
+        .from('quan_tri_vien')
         .select('*')
-        .eq('username', cleanUser)
-        .eq('password_hash', cleanPass)
+        .eq('ten_dang_nhap', cleanUser)
+        .eq('mat_khau', cleanPass)
         .maybeSingle();
 
       if (adminUser) {
         const userObj = {
-          id: adminUser.id,
-          username: adminUser.username,
-          name: adminUser.full_name || adminUser.username,
-          email: adminUser.email || `${adminUser.username}@cointap.vn`,
-          role: adminUser.role || 'Administrator',
+          id: adminUser.ma_quan_tri ?? adminUser.id,
+          username: adminUser.ten_dang_nhap ?? adminUser.username,
+          name: adminUser.ho_ten || adminUser.full_name || adminUser.ten_dang_nhap || adminUser.username,
+          email: adminUser.email || `${adminUser.ten_dang_nhap}@cointap.vn`,
+          role: adminUser.vai_tro || adminUser.role || 'Administrator',
           loginAt: new Date().toISOString(),
         };
         saveSession(userObj);

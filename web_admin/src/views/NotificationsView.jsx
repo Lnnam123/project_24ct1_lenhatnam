@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Bell, 
   BellRing, 
@@ -7,16 +7,13 @@ import {
   Trash2, 
   Eye, 
   Send, 
-  Users, 
   User, 
   Layers, 
   Info, 
   AlertTriangle, 
   Sparkles, 
-  CheckCircle2, 
   Clock, 
   Check,
-  ShieldCheck,
   Smartphone
 } from 'lucide-react';
 import Modal from '../components/Modal';
@@ -44,11 +41,7 @@ export default function NotificationsView({ showToast }) {
   const [formContent, setFormContent] = useState('');
   const [sending, setSending] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [notifsData, usersData] = await Promise.all([
@@ -61,11 +54,41 @@ export default function NotificationsView({ showToast }) {
         setSelectedUserId(usersData[0].user_id.toString());
       }
     } catch (err) {
-      showToast('Lỗi nạp danh sách thông báo: ' + err.message, 'error');
+      if (showToast) {
+        showToast('Lỗi nạp danh sách thông báo: ' + err.message, 'error');
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    let ignore = false;
+    Promise.all([
+      ApiService.getNotifications(),
+      ApiService.getUsers()
+    ]).then(([notifsData, usersData]) => {
+      if (!ignore) {
+        setNotifications(notifsData || []);
+        setUsers(usersData || []);
+        if (usersData && usersData.length > 0) {
+          setSelectedUserId(usersData[0].user_id.toString());
+        }
+        setLoading(false);
+      }
+    }).catch((err) => {
+      if (!ignore) {
+        if (showToast) {
+          showToast('Lỗi nạp danh sách thông báo: ' + err.message, 'error');
+        }
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [showToast]);
 
   // Helper render badges cho từng loại thông báo
   const getTypeBadge = (type) => {
@@ -125,7 +148,7 @@ export default function NotificationsView({ showToast }) {
         hour: '2-digit',
         minute: '2-digit'
       });
-    } catch (e) {
+    } catch {
       return isoString;
     }
   };
@@ -571,7 +594,7 @@ export default function NotificationsView({ showToast }) {
             <input
               type="text"
               className="form-control"
-              placeholder="VD: Cập nhật CoinTap phiên bản v1.5.0 mới..."
+              placeholder="VD: Cập nhật CoinTap phiên bản v1.5.1 mới..."
               value={formTitle}
               onChange={(e) => setFormTitle(e.target.value)}
               required

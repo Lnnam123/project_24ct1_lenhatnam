@@ -18,29 +18,93 @@ export const formatDateTime = (dateStr) => {
   }).format(d);
 };
 
+// Helper mappers between Vietnamese database columns and frontend models
+const mapUser = u => u ? ({
+  ...u,
+  user_id: u.ma_nguoi_dung ?? u.user_id,
+  full_name: u.ho_ten ?? u.full_name ?? '',
+  email: u.email ?? '',
+  phone_number: u.so_dien_thoai ?? u.phone_number ?? '',
+  avatar_url: u.anh_dai_dien ?? u.avatar_url ?? '',
+  created_at: u.ngay_tao ?? u.created_at
+}) : null;
+
+const mapWallet = w => w ? ({
+  ...w,
+  wallet_id: w.ma_vi ?? w.wallet_id,
+  user_id: w.ma_nguoi_dung ?? w.user_id,
+  wallet_name: w.ten_vi ?? w.wallet_name,
+  wallet_type: w.loai_vi ?? w.wallet_type,
+  balance: Number(w.so_du ?? w.balance) || 0,
+  icon: w.bieu_tuong ?? w.icon,
+  color: w.mau_sac ?? w.color,
+  is_active: w.dang_hoat_dong ?? w.is_active ?? true,
+  created_at: w.ngay_tao ?? w.created_at
+}) : null;
+
+const mapCategory = c => c ? ({
+  ...c,
+  category_id: c.ma_danh_muc ?? c.category_id,
+  user_id: c.ma_nguoi_dung ?? c.user_id,
+  name: c.ten_danh_muc ?? c.name,
+  type: c.loai_danh_muc ?? c.type,
+  icon: c.bieu_tuong ?? c.icon,
+  color: c.mau_sac ?? c.color,
+  is_active: c.dang_hoat_dong ?? c.is_active ?? true,
+  created_at: c.ngay_tao ?? c.created_at
+}) : null;
+
+const mapTransaction = t => t ? ({
+  ...t,
+  transaction_id: t.ma_giao_dich ?? t.transaction_id,
+  user_id: t.ma_nguoi_dung ?? t.user_id,
+  wallet_id: t.ma_vi ?? t.wallet_id,
+  category_id: t.ma_danh_muc ?? t.category_id,
+  amount: Number(t.so_tien ?? t.amount) || 0,
+  type: t.loai_giao_dich ?? t.type,
+  transaction_date: t.ngay_giao_dich ?? t.transaction_date,
+  note: t.ghi_chu ?? t.note,
+  created_at: t.ngay_tao ?? t.created_at,
+  categories: t.danh_muc ? mapCategory(t.danh_muc) : (t.categories ? mapCategory(t.categories) : null),
+  users: t.nguoi_dung ? mapUser(t.nguoi_dung) : (t.users ? mapUser(t.users) : null),
+  wallets: t.vi_tien ? mapWallet(t.vi_tien) : (t.wallets ? mapWallet(t.wallets) : null),
+}) : null;
+
+const mapAdmin = a => a ? ({
+  ...a,
+  id: a.ma_quan_tri ?? a.id,
+  username: a.ten_dang_nhap ?? a.username,
+  password_hash: a.mat_khau ?? a.password_hash,
+  full_name: a.ho_ten ?? a.full_name,
+  role: a.vai_tro ?? a.role,
+  email: a.email,
+  created_at: a.ngay_tao ?? a.created_at,
+  updated_at: a.ngay_cap_nhat ?? a.updated_at
+}) : null;
+
 export const ApiService = {
   // 1. Thống kê KPI tổng quan
   async getKPIStats() {
     try {
       const [usersRes, walletsRes, transRes, aiRes] = await Promise.all([
-        supabase.from('users').select('user_id', { count: 'exact' }),
-        supabase.from('wallets').select('balance'),
-        supabase.from('transactions').select('amount, type, transaction_date'),
-        supabase.from('ai_conversations').select('session_id', { count: 'exact' })
+        supabase.from('nguoi_dung').select('ma_nguoi_dung', { count: 'exact' }),
+        supabase.from('vi_tien').select('so_du'),
+        supabase.from('giao_dich').select('so_tien, loai_giao_dich, ngay_giao_dich'),
+        supabase.from('cuoc_tro_chuyen_ai').select('ma_phien', { count: 'exact' })
       ]);
 
       const totalUsers = usersRes.count || 0;
       const totalWallets = (walletsRes.data || []).length;
-      const totalBalance = (walletsRes.data || []).reduce((acc, w) => acc + (Number(w.balance) || 0), 0);
+      const totalBalance = (walletsRes.data || []).reduce((acc, w) => acc + (Number(w.so_du) || 0), 0);
       const totalTransactions = (transRes.data || []).length;
       const totalAISessions = aiRes.count || 0;
 
       let totalIncome = 0;
       let totalExpense = 0;
       (transRes.data || []).forEach(t => {
-        const amt = Number(t.amount) || 0;
-        if (t.type === 'INCOME') totalIncome += amt;
-        else if (t.type === 'EXPENSE') totalExpense += amt;
+        const amt = Number(t.so_tien) || 0;
+        if (t.loai_giao_dich === 'INCOME') totalIncome += amt;
+        else if (t.loai_giao_dich === 'EXPENSE') totalExpense += amt;
       });
 
       return {
@@ -51,7 +115,7 @@ export const ApiService = {
         totalAISessions,
         totalIncome,
         totalExpense,
-        transactions: transRes.data || []
+        transactions: (transRes.data || []).map(mapTransaction)
       };
     } catch (e) {
       console.error('Lỗi getKPIStats:', e);
@@ -71,13 +135,13 @@ export const ApiService = {
   // 2. Quản lý Người dùng
   async getUsers(search = '') {
     try {
-      let query = supabase.from('users').select('*').order('created_at', { ascending: false });
+      let query = supabase.from('nguoi_dung').select('*').order('ngay_tao', { ascending: false });
       if (search.trim()) {
-        query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+        query = query.or(`ho_ten.ilike.%${search}%,email.ilike.%${search}%`);
       }
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      return (data || []).map(mapUser);
     } catch (e) {
       console.error('Lỗi getUsers:', e);
       return [];
@@ -87,14 +151,14 @@ export const ApiService = {
   async getUserDetails(userId) {
     try {
       const [userRes, walletsRes, transRes] = await Promise.all([
-        supabase.from('users').select('*').eq('user_id', userId).single(),
-        supabase.from('wallets').select('*').eq('user_id', userId),
-        supabase.from('transactions').select('*, categories(name, icon, color)').eq('user_id', userId).order('transaction_date', { ascending: false }).limit(20)
+        supabase.from('nguoi_dung').select('*').eq('ma_nguoi_dung', userId).single(),
+        supabase.from('vi_tien').select('*').eq('ma_nguoi_dung', userId),
+        supabase.from('giao_dich').select('*, danh_muc(ten_danh_muc, bieu_tuong, mau_sac)').eq('ma_nguoi_dung', userId).order('ngay_giao_dich', { ascending: false }).limit(20)
       ]);
       return {
-        user: userRes.data,
-        wallets: walletsRes.data || [],
-        transactions: transRes.data || []
+        user: mapUser(userRes.data),
+        wallets: (walletsRes.data || []).map(mapWallet),
+        transactions: (transRes.data || []).map(mapTransaction)
       };
     } catch (e) {
       console.error('Lỗi getUserDetails:', e);
@@ -103,7 +167,7 @@ export const ApiService = {
   },
 
   async deleteUser(userId) {
-    const { error } = await supabase.from('users').delete().eq('user_id', userId);
+    const { error } = await supabase.from('nguoi_dung').delete().eq('ma_nguoi_dung', userId);
     if (error) throw error;
     return true;
   },
@@ -112,18 +176,30 @@ export const ApiService = {
   async getTransactions(limit = 100, type = 'ALL') {
     try {
       let query = supabase
-        .from('transactions')
-        .select('*, users(full_name, email), wallets(wallet_name), categories(name, icon, color)')
-        .order('transaction_date', { ascending: false })
+        .from('giao_dich')
+        .select('*, nguoi_dung(ho_ten, email), vi_tien(ten_vi), danh_muc(ten_danh_muc, bieu_tuong, mau_sac)')
+        .order('ngay_giao_dich', { ascending: false })
         .limit(limit);
 
       if (type !== 'ALL') {
-        query = query.eq('type', type);
+        query = query.eq('loai_giao_dich', type);
       }
 
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      return (data || []).map(t => {
+        const mapped = mapTransaction(t);
+        if (t.nguoi_dung) mapped.users = mapUser(t.nguoi_dung);
+        if (t.vi_tien) mapped.wallets = mapWallet(t.vi_tien);
+        if (t.danh_muc) {
+          mapped.categories = {
+            name: t.danh_muc.ten_danh_muc,
+            icon: t.danh_muc.bieu_tuong,
+            color: t.danh_muc.mau_sac
+          };
+        }
+        return mapped;
+      });
     } catch (e) {
       console.error('Lỗi getTransactions:', e);
       return [];
@@ -131,7 +207,7 @@ export const ApiService = {
   },
 
   async deleteTransaction(transId) {
-    const { error } = await supabase.from('transactions').delete().eq('transaction_id', transId);
+    const { error } = await supabase.from('giao_dich').delete().eq('ma_giao_dich', transId);
     if (error) throw error;
     return true;
   },
@@ -139,9 +215,9 @@ export const ApiService = {
   // 4. Quản lý Danh mục
   async getCategories() {
     try {
-      const { data, error } = await supabase.from('categories').select('*').order('category_id', { ascending: true });
+      const { data, error } = await supabase.from('danh_muc').select('*').order('ma_danh_muc', { ascending: true });
       if (error) throw error;
-      return data || [];
+      return (data || []).map(mapCategory);
     } catch (e) {
       console.error('Lỗi getCategories:', e);
       return [];
@@ -150,49 +226,47 @@ export const ApiService = {
 
   async addCategory(cat) {
     const { data, error } = await supabase
-      .from('categories')
+      .from('danh_muc')
       .insert([{
-        name: cat.name,
-        type: cat.type,
-        icon: cat.icon || 'category',
-        color: cat.color || '#004AC6',
-        user_id: cat.is_system ? null : (cat.user_id || null)
+        ten_danh_muc: cat.name || cat.ten_danh_muc,
+        loai_danh_muc: cat.type || cat.loai_danh_muc,
+        bieu_tuong: cat.icon || cat.bieu_tuong || 'category',
+        mau_sac: cat.color || cat.mau_sac || '#004AC6',
+        ma_nguoi_dung: cat.is_system ? null : (cat.user_id || cat.ma_nguoi_dung || null)
       }])
       .select();
     if (error) throw error;
-    return data?.[0];
+    return mapCategory(data?.[0]);
   },
 
   async updateCategory(id, cat) {
     const updatePayload = {
-      name: cat.name,
-      type: cat.type,
-      icon: cat.icon || 'category',
-      color: cat.color || '#004AC6'
+      ten_danh_muc: cat.name || cat.ten_danh_muc,
+      loai_danh_muc: cat.type || cat.loai_danh_muc,
+      bieu_tuong: cat.icon || cat.bieu_tuong || 'category',
+      mau_sac: cat.color || cat.mau_sac || '#004AC6'
     };
     if (cat.is_system !== undefined) {
-      updatePayload.user_id = cat.is_system ? null : (cat.user_id || null);
+      updatePayload.ma_nguoi_dung = cat.is_system ? null : (cat.user_id || cat.ma_nguoi_dung || null);
     }
     const { data, error } = await supabase
-      .from('categories')
+      .from('danh_muc')
       .update(updatePayload)
-      .eq('category_id', id)
+      .eq('ma_danh_muc', id)
       .select();
     if (error) throw error;
-    return data?.[0];
+    return mapCategory(data?.[0]);
   },
 
-
   async deleteCategory(id) {
-    const { error } = await supabase.from('categories').delete().eq('category_id', id);
+    const { error } = await supabase.from('danh_muc').delete().eq('ma_danh_muc', id);
     if (error) throw error;
     return true;
   },
 
-  // 5. Quản lý AI Sessions & Messages & KeyStream-Gemini Tokens
+  // 5. Quản lý AI Sessions & Messages & Tokens
   estimateTokens(text = '') {
     if (!text) return 0;
-    // Gemini tokenizer: trung bình ~3.5 ký tự mỗi token cho tiếng Việt và tiếng Anh
     const chars = text.trim().length;
     return Math.max(1, Math.round(chars / 3.5));
   },
@@ -205,19 +279,35 @@ export const ApiService = {
     try {
       const [convRes, msgRes] = await Promise.all([
         supabase
-          .from('ai_conversations')
-          .select('*, users(full_name, email)')
-          .order('updated_at', { ascending: false }),
+          .from('cuoc_tro_chuyen_ai')
+          .select('*, nguoi_dung(ho_ten, email)')
+          .order('ngay_cap_nhat', { ascending: false }),
         supabase
-          .from('ai_chat_messages')
-          .select('message_id, session_id, user_id, content, is_user, created_at')
-          .order('created_at', { ascending: true })
+          .from('tin_nhan_ai')
+          .select('ma_tin_nhan, ma_phien, ma_nguoi_dung, noi_dung, la_nguoi_dung, ngay_tao')
+          .order('ngay_tao', { ascending: true })
       ]);
 
-      const convs = convRes.data || [];
-      const msgs = msgRes.data || [];
+      const convs = (convRes.data || []).map(c => ({
+        ...c,
+        session_id: c.ma_phien ?? c.session_id,
+        user_id: c.ma_nguoi_dung ?? c.user_id,
+        title: c.tieu_de ?? c.title,
+        created_at: c.ngay_tao ?? c.created_at,
+        updated_at: c.ngay_cap_nhat ?? c.updated_at,
+        users: c.nguoi_dung ? mapUser(c.nguoi_dung) : (c.users ? mapUser(c.users) : null)
+      }));
 
-      // Gom nhóm tin nhắn theo session_id và tính tokens
+      const msgs = (msgRes.data || []).map(m => ({
+        ...m,
+        message_id: m.ma_tin_nhan ?? m.message_id,
+        session_id: m.ma_phien ?? m.session_id,
+        user_id: m.ma_nguoi_dung ?? m.user_id,
+        content: m.noi_dung ?? m.content,
+        is_user: m.la_nguoi_dung ?? m.is_user,
+        created_at: m.ngay_tao ?? m.created_at
+      }));
+
       const msgMap = {};
       let totalPromptTokens = 0;
       let totalCompletionTokens = 0;
@@ -268,7 +358,6 @@ export const ApiService = {
       });
 
       const totalTokens = totalPromptTokens + totalCompletionTokens;
-      // Chi phí ước tính Google Gemini Flash: ~$0.075 / 1M input, ~$0.30 / 1M output
       const costUSD = (totalPromptTokens * 0.000000075) + (totalCompletionTokens * 0.00000030);
       const costVND = Math.round(costUSD * 25450);
 
@@ -307,7 +396,6 @@ export const ApiService = {
     const mobileApiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
     const keyHash = mobileApiKey ? '...' + mobileApiKey.slice(-4) : '...Active';
 
-    // 1. Thử kết nối KeyStream-Gemini proxy nếu đang chạy tại localhost:13337
     try {
       const res = await fetch('http://localhost:13337/api/stats', { signal: AbortSignal.timeout(1500) });
       if (res.ok) {
@@ -318,10 +406,9 @@ export const ApiService = {
         };
       }
     } catch {
-      // KeyStream Proxy local chưa bật, kiểm tra trực tiếp qua Google AI API của App
+      // ignore
     }
 
-    // 2. Kiểm tra trực tiếp API Key của Mobile App với Google Generative AI
     let isGoogleOnline = false;
     let availableModelsCount = 50;
     try {
@@ -378,14 +465,20 @@ export const ApiService = {
   async getAIMessages(sessionId) {
     try {
       const { data, error } = await supabase
-        .from('ai_chat_messages')
+        .from('tin_nhan_ai')
         .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
+        .eq('ma_phien', sessionId)
+        .order('ngay_tao', { ascending: true });
       if (error) throw error;
       return (data || []).map(m => ({
         ...m,
-        tokens: this.estimateTokens(m.content)
+        message_id: m.ma_tin_nhan ?? m.message_id,
+        session_id: m.ma_phien ?? m.session_id,
+        user_id: m.ma_nguoi_dung ?? m.user_id,
+        content: m.noi_dung ?? m.content,
+        is_user: m.la_nguoi_dung ?? m.is_user,
+        created_at: m.ngay_tao ?? m.created_at,
+        tokens: this.estimateTokens(m.noi_dung ?? m.content)
       }));
     } catch (e) {
       console.error('Lỗi getAIMessages:', e);
@@ -394,8 +487,8 @@ export const ApiService = {
   },
 
   async deleteAIConversation(sessionId) {
-    await supabase.from('ai_chat_messages').delete().eq('session_id', sessionId);
-    const { error } = await supabase.from('ai_conversations').delete().eq('session_id', sessionId);
+    await supabase.from('tin_nhan_ai').delete().eq('ma_phien', sessionId);
+    const { error } = await supabase.from('cuoc_tro_chuyen_ai').delete().eq('ma_phien', sessionId);
     if (error) throw error;
     return true;
   },
@@ -404,11 +497,21 @@ export const ApiService = {
   async getNotifications() {
     try {
       const { data, error } = await supabase
-        .from('notifications')
-        .select('*, users(user_id, full_name, email)')
-        .order('created_at', { ascending: false });
+        .from('thong_bao')
+        .select('*, nguoi_dung(ma_nguoi_dung, ho_ten, email)')
+        .order('ngay_tao', { ascending: false });
       if (error) throw error;
-      return data || [];
+      return (data || []).map(n => ({
+        ...n,
+        notification_id: n.ma_thong_bao ?? n.notification_id,
+        user_id: n.ma_nguoi_dung ?? n.user_id,
+        title: n.tieu_de ?? n.title,
+        content: n.noi_dung ?? n.content,
+        type: n.loai_thong_bao ?? n.type,
+        is_read: n.da_doc ?? n.is_read,
+        created_at: n.ngay_tao ?? n.created_at,
+        users: n.nguoi_dung ? mapUser(n.nguoi_dung) : (n.users ? mapUser(n.users) : null)
+      }));
     } catch (e) {
       console.error('Lỗi getNotifications:', e);
       return [];
@@ -417,9 +520,9 @@ export const ApiService = {
 
   async deleteNotification(id) {
     const { error } = await supabase
-      .from('notifications')
+      .from('thong_bao')
       .delete()
-      .eq('notification_id', id);
+      .eq('ma_thong_bao', id);
     if (error) throw error;
     return true;
   },
@@ -436,49 +539,45 @@ export const ApiService = {
     if (targetUserIds.length === 0) return true;
 
     const records = targetUserIds.map(uId => ({
-      user_id: uId,
-      title,
-      content,
-      type,
-      is_read: false
+      ma_nguoi_dung: uId,
+      tieu_de: title,
+      noi_dung: content,
+      loai_thong_bao: type,
+      da_doc: false
     }));
 
-    const { error } = await supabase.from('notifications').insert(records);
+    const { error } = await supabase.from('thong_bao').insert(records);
     if (error) throw error;
     return true;
   },
 
-  // 7. Quản lý Quản trị viên (Bảng riêng 'admins')
+  // 7. Quản lý Quản trị viên (Bảng 'quan_tri_vien')
   async getAdmins() {
     try {
       const { data, error } = await supabase
-        .from('admins')
+        .from('quan_tri_vien')
         .select('*')
-        .order('id', { ascending: true });
+        .order('ma_quan_tri', { ascending: true });
 
       if (error) {
-        // Nếu bảng 'admins' chưa được tạo trong Supabase
-        if (error.code === 'PGRST205' || error.message.includes('admins')) {
-          const localAdmins = JSON.parse(localStorage.getItem('cointap_local_admins') || '[]');
-          if (localAdmins.length === 0) {
-            const defaultAdmin = [{
-              id: 1,
-              username: 'admin',
-              password_hash: 'admin',
-              full_name: 'Quản Trị Viên Gốc',
-              role: 'Super Admin',
-              email: 'admin@cointap.vn',
-              created_at: new Date().toISOString()
-            }];
-            localStorage.setItem('cointap_local_admins', JSON.stringify(defaultAdmin));
-            return { admins: defaultAdmin, tableMissing: true };
-          }
-          return { admins: localAdmins, tableMissing: true };
+        const localAdmins = JSON.parse(localStorage.getItem('cointap_local_admins') || '[]');
+        if (localAdmins.length === 0) {
+          const defaultAdmin = [{
+            id: 1,
+            username: 'admin',
+            password_hash: 'admin',
+            full_name: 'Quản Trị Viên Gốc',
+            role: 'Super Admin',
+            email: 'admin@cointap.vn',
+            created_at: new Date().toISOString()
+          }];
+          localStorage.setItem('cointap_local_admins', JSON.stringify(defaultAdmin));
+          return { admins: defaultAdmin, tableMissing: true };
         }
-        throw error;
+        return { admins: localAdmins, tableMissing: true };
       }
 
-      return { admins: data || [], tableMissing: false };
+      return { admins: (data || []).map(mapAdmin), tableMissing: false };
     } catch (e) {
       console.error('Lỗi getAdmins:', e);
       return { admins: [], tableMissing: true, error: e.message };
@@ -488,38 +587,21 @@ export const ApiService = {
   async createAdmin({ username, password, full_name, role = 'Administrator', email = '' }) {
     try {
       const { data, error } = await supabase
-        .from('admins')
+        .from('quan_tri_vien')
         .insert([{
-          username: username.trim(),
-          password_hash: password.trim(),
-          full_name: full_name.trim(),
-          role,
+          ten_dang_nhap: username.trim(),
+          mat_khau: password.trim(),
+          ho_ten: full_name.trim(),
+          vai_tro: role,
           email: email.trim() || `${username.trim()}@cointap.vn`
         }])
         .select();
 
       if (error) {
-        if (error.code === 'PGRST205') {
-          // Lưu tạm local
-          const localAdmins = JSON.parse(localStorage.getItem('cointap_local_admins') || '[]');
-          const newId = localAdmins.length ? Math.max(...localAdmins.map(a => a.id)) + 1 : 1;
-          const newAdmin = {
-            id: newId,
-            username: username.trim(),
-            password_hash: password.trim(),
-            full_name: full_name.trim(),
-            role,
-            email: email.trim() || `${username.trim()}@cointap.vn`,
-            created_at: new Date().toISOString()
-          };
-          localAdmins.push(newAdmin);
-          localStorage.setItem('cointap_local_admins', JSON.stringify(localAdmins));
-          return { success: true, admin: newAdmin, localOnly: true };
-        }
         throw error;
       }
 
-      return { success: true, admin: data?.[0] };
+      return { success: true, admin: mapAdmin(data?.[0]) };
     } catch (e) {
       console.error('Lỗi createAdmin:', e);
       throw e;
@@ -529,19 +611,11 @@ export const ApiService = {
   async deleteAdmin(adminId) {
     try {
       const { error } = await supabase
-        .from('admins')
+        .from('quan_tri_vien')
         .delete()
-        .eq('id', adminId);
+        .eq('ma_quan_tri', adminId);
 
-      if (error) {
-        if (error.code === 'PGRST205') {
-          const localAdmins = JSON.parse(localStorage.getItem('cointap_local_admins') || '[]');
-          const filtered = localAdmins.filter(a => a.id !== adminId);
-          localStorage.setItem('cointap_local_admins', JSON.stringify(filtered));
-          return true;
-        }
-        throw error;
-      }
+      if (error) throw error;
       return true;
     } catch (e) {
       console.error('Lỗi deleteAdmin:', e);
@@ -552,52 +626,29 @@ export const ApiService = {
   async resetAdminPassword(adminId, newPassword, newRole, newFullName, newEmail) {
     try {
       const updates = {
-        updated_at: new Date().toISOString()
+        ngay_cap_nhat: new Date().toISOString()
       };
       if (newPassword && newPassword.trim()) {
-        updates.password_hash = newPassword.trim();
+        updates.mat_khau = newPassword.trim();
       }
       if (newRole) {
-        updates.role = newRole;
+        updates.vai_tro = newRole;
       }
       if (newFullName && newFullName.trim()) {
-        updates.full_name = newFullName.trim();
+        updates.ho_ten = newFullName.trim();
       }
       if (newEmail !== undefined && newEmail.trim()) {
         updates.email = newEmail.trim();
       }
 
       const { data, error } = await supabase
-        .from('admins')
+        .from('quan_tri_vien')
         .update(updates)
-        .eq('id', adminId)
+        .eq('ma_quan_tri', adminId)
         .select();
 
-      if (error) {
-        if (error.code === 'PGRST205') {
-          const localAdmins = JSON.parse(localStorage.getItem('cointap_local_admins') || '[]');
-          const idx = localAdmins.findIndex(a => a.id === adminId);
-          if (idx !== -1) {
-            if (newPassword && newPassword.trim()) {
-              localAdmins[idx].password_hash = newPassword.trim();
-            }
-            if (newRole) {
-              localAdmins[idx].role = newRole;
-            }
-            if (newFullName && newFullName.trim()) {
-              localAdmins[idx].full_name = newFullName.trim();
-            }
-            if (newEmail !== undefined && newEmail.trim()) {
-              localAdmins[idx].email = newEmail.trim();
-            }
-            localAdmins[idx].updated_at = new Date().toISOString();
-            localStorage.setItem('cointap_local_admins', JSON.stringify(localAdmins));
-            return { success: true, admin: localAdmins[idx] };
-          }
-        }
-        throw error;
-      }
-      return { success: true, admin: data?.[0] };
+      if (error) throw error;
+      return { success: true, admin: mapAdmin(data?.[0]) };
     } catch (e) {
       console.error('Lỗi resetAdminPassword:', e);
       throw e;
@@ -612,48 +663,17 @@ export const ApiService = {
     }
 
     try {
-      // 1. Thử cập nhật trên Supabase
       const { data, error } = await supabase
-        .from('admins')
+        .from('quan_tri_vien')
         .update({
-          password_hash: cleanPass,
-          updated_at: new Date().toISOString()
+          mat_khau: cleanPass,
+          ngay_cap_nhat: new Date().toISOString()
         })
-        .or(`username.eq.${cleanId},email.eq.${cleanId}`)
+        .or(`ten_dang_nhap.eq.${cleanId},email.eq.${cleanId}`)
         .select();
 
       if (!error && data && data.length > 0) {
-        return { success: true, admin: data[0] };
-      }
-
-      // 2. Nếu không tìm thấy hoặc bảng chưa tạo, kiểm tra local storage
-      const localAdmins = JSON.parse(localStorage.getItem('cointap_local_admins') || '[]');
-      const idx = localAdmins.findIndex(
-        a => a.username?.toLowerCase() === cleanId.toLowerCase() || a.email?.toLowerCase() === cleanId.toLowerCase()
-      );
-
-      if (idx !== -1) {
-        localAdmins[idx].password_hash = cleanPass;
-        localAdmins[idx].updated_at = new Date().toISOString();
-        localStorage.setItem('cointap_local_admins', JSON.stringify(localAdmins));
-        return { success: true, admin: localAdmins[idx] };
-      }
-
-      // 3. Xử lý trường hợp tài khoản mặc định 'admin'
-      if (cleanId.toLowerCase() === 'admin' || cleanId.toLowerCase() === 'admin@cointap.vn') {
-        const rootAdmin = {
-          id: 1,
-          username: 'admin',
-          full_name: 'Quản Trị Viên Gốc',
-          email: 'admin@cointap.vn',
-          role: 'Super Admin',
-          password_hash: cleanPass,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        localAdmins.push(rootAdmin);
-        localStorage.setItem('cointap_local_admins', JSON.stringify(localAdmins));
-        return { success: true, admin: rootAdmin };
+        return { success: true, admin: mapAdmin(data[0]) };
       }
 
       throw new Error(`Không tìm thấy tài khoản quản trị nào khớp với "${cleanId}"`);
@@ -663,4 +683,3 @@ export const ApiService = {
     }
   }
 };
-

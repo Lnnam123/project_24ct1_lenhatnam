@@ -1,4 +1,4 @@
-# CoinTap (appandroid)
+# CoinTap
 
 Ứng dụng quản lý tài chính cá nhân thông minh, hỗ trợ theo dõi thu chi, phân tích biểu đồ và tự động cập nhật phần mềm (OTA). Ứng dụng được phát triển bằng framework Flutter.
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../chu_de/mau_sac.dart';
 import '../du_lieu/database_helper.dart';
 import 'dang_ky.dart';
@@ -37,7 +38,9 @@ class _ManHinhDangNhapState extends State<ManHinhDangNhap> {
     final savedUserName = prefs.getString('saved_user_name');
     final savedUserEmail = prefs.getString('saved_user_email');
 
-    if (savedUserId != null && savedUserName != null && savedUserEmail != null) {
+    if (savedUserId != null &&
+        savedUserName != null &&
+        savedUserEmail != null) {
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -63,7 +66,7 @@ class _ManHinhDangNhapState extends State<ManHinhDangNhap> {
     }
 
     setState(() => _isLoading = true);
-
+    // gọi hàm đăng nhập
     final user = await DatabaseHelper.instance.login(email, password);
 
     setState(() => _isLoading = false);
@@ -119,24 +122,40 @@ class _ManHinhDangNhapState extends State<ManHinhDangNhap> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Email', style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.bold, color: MauSac.onSurfaceVariant)),
+                  Text(
+                    'Email',
+                    style: GoogleFonts.manrope(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: MauSac.onSurfaceVariant,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   TextField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       hintText: 'Nhập email của bạn',
-                      hintStyle: GoogleFonts.manrope(color: MauSac.onSurfaceVariant.withValues(alpha: 0.5)),
-                      prefixIcon: const Icon(Icons.mail_outline, color: MauSac.onSurfaceVariant),
+                      hintStyle: GoogleFonts.manrope(
+                        color: MauSac.onSurfaceVariant.withValues(alpha: 0.5),
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.mail_outline,
+                        color: MauSac.onSurfaceVariant,
+                      ),
                       filled: true,
                       fillColor: MauSac.background,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: MauSac.borderSubtle),
+                        borderSide: const BorderSide(
+                          color: MauSac.borderSubtle,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: MauSac.borderSubtle),
+                        borderSide: const BorderSide(
+                          color: MauSac.borderSubtle,
+                        ),
                       ),
                     ),
                   ),
@@ -148,47 +167,74 @@ class _ManHinhDangNhapState extends State<ManHinhDangNhap> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Mật khẩu', style: GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.bold, color: MauSac.onSurfaceVariant)),
+                  Text(
+                    'Mật khẩu',
+                    style: GoogleFonts.manrope(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: MauSac.onSurfaceVariant,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   TextField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
                       hintText: 'Nhập mật khẩu',
-                      hintStyle: GoogleFonts.manrope(color: MauSac.onSurfaceVariant.withValues(alpha: 0.5)),
-                      prefixIcon: const Icon(Icons.lock_outline, color: MauSac.onSurfaceVariant),
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                      hintStyle: GoogleFonts.manrope(
+                        color: MauSac.onSurfaceVariant.withValues(alpha: 0.5),
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
                         color: MauSac.onSurfaceVariant,
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                        ),
+                        color: MauSac.onSurfaceVariant,
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                       ),
                       filled: true,
                       fillColor: MauSac.background,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: MauSac.borderSubtle),
+                        borderSide: const BorderSide(
+                          color: MauSac.borderSubtle,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: MauSac.borderSubtle),
+                        borderSide: const BorderSide(
+                          color: MauSac.borderSubtle,
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
-              
+
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const ManHinhQuenMatKhau()),
+                      MaterialPageRoute(
+                        builder: (_) => const ManHinhQuenMatKhau(),
+                      ),
                     );
                   },
                   child: Text(
                     'Quên mật khẩu?',
-                    style: GoogleFonts.manrope(color: MauSac.primary, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.manrope(
+                      color: MauSac.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -200,13 +246,22 @@ class _ManHinhDangNhapState extends State<ManHinhDangNhap> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: MauSac.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     elevation: 0,
                   ),
                   onPressed: _isLoading ? null : _dangNhap,
-                  child: _isLoading 
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text('ĐĂNG NHẬP', style: GoogleFonts.manrope(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : Text(
+                          'ĐĂNG NHẬP',
+                          style: GoogleFonts.manrope(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                 ),
               ),
 
@@ -214,15 +269,29 @@ class _ManHinhDangNhapState extends State<ManHinhDangNhap> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Chưa có tài khoản? ', style: GoogleFonts.manrope(color: MauSac.onSurfaceVariant)),
+                  Text(
+                    'Chưa có tài khoản? ',
+                    style: GoogleFonts.manrope(color: MauSac.onSurfaceVariant),
+                  ),
                   GestureDetector(
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ManHinhDangKy()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ManHinhDangKy(),
+                        ),
+                      );
                     },
-                    child: Text('Đăng ký ngay', style: GoogleFonts.manrope(color: MauSac.primary, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      'Đăng ký ngay',
+                      style: GoogleFonts.manrope(
+                        color: MauSac.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
-              )
+              ),
             ],
           ),
         ),

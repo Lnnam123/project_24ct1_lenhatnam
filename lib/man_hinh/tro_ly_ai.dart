@@ -1115,61 +1115,68 @@ Nếu bạn muốn, mình có thể phân tích tiếp:
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFEDE5F7), // Tím nhạt trên cùng
-              Color(0xFFF7F3FC),
-              Color(0xFFFAF7FE),
-              Color(0xFFF4EDF9), // Hồng tím pastel dưới cùng
-            ],
-            stops: [0.0, 0.35, 0.7, 1.0],
+    return PopScope(
+      canPop: _chiMucHienTai == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _onNutBackNhan();
+      },
+      child: Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFEDE5F7), // Tím nhạt trên cùng
+                Color(0xFFF7F3FC),
+                Color(0xFFFAF7FE),
+                Color(0xFFF4EDF9), // Hồng tím pastel dưới cùng
+              ],
+              stops: [0.0, 0.35, 0.7, 1.0],
+            ),
           ),
-        ),
-        child: SafeArea(
-          bottom: false,
-          child: Column(
-            children: [
-              _buildTopBar(),
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  transitionBuilder: (Widget child, Animation<double> animation) {
-                    final isIncoming =
-                        (child.key as ValueKey<int>).value == _chiMucHienTai;
+          child: SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                _buildTopBar(),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (Widget child, Animation<double> animation) {
+                      final isIncoming =
+                          (child.key as ValueKey<int>).value == _chiMucHienTai;
 
-                    final slideDirection = _truotSangTrai ? 1.0 : -1.0;
-                    final offsetBegin = isIncoming
-                        ? Offset(slideDirection, 0.0)
-                        : Offset(-slideDirection, 0.0);
+                      final slideDirection = _truotSangTrai ? 1.0 : -1.0;
+                      final offsetBegin = isIncoming
+                          ? Offset(slideDirection, 0.0)
+                          : Offset(-slideDirection, 0.0);
 
-                    final slideAnimation = Tween<Offset>(
-                      begin: offsetBegin,
-                      end: Offset.zero,
-                    ).animate(animation);
+                      final slideAnimation = Tween<Offset>(
+                        begin: offsetBegin,
+                        end: Offset.zero,
+                      ).animate(animation);
 
-                    return FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: slideAnimation,
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: Container(
-                    key: ValueKey<int>(_chiMucHienTai),
-                    child: _buildManHinhTheoChiMuc(_chiMucHienTai),
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: slideAnimation,
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Container(
+                      key: ValueKey<int>(_chiMucHienTai),
+                      child: _buildManHinhTheoChiMuc(_chiMucHienTai),
+                    ),
                   ),
                 ),
-              ),
-              _buildBottomInput(),
-            ],
+                _buildBottomInput(),
+              ],
+            ),
           ),
         ),
       ),
@@ -2547,6 +2554,7 @@ Nếu bạn muốn, mình có thể phân tích tiếp:
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 6, 18, 16),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           // Grid icon button (opens suggested questions modal)
           Material(
@@ -2577,13 +2585,16 @@ Nếu bạn muốn, mình có thể phân tích tiếp:
             ),
           ),
           const SizedBox(width: 10),
-          // Pill input textfield
+          // Pill input textfield with auto-expanding height
           Expanded(
             child: Container(
-              height: 50,
+              constraints: const BoxConstraints(
+                minHeight: 50,
+                maxHeight: 140,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(26),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: const Color(0xFFE8E4F2),
                   width: 1.2,
@@ -2597,38 +2608,46 @@ Nếu bạn muốn, mình có thể phân tích tiếp:
                 ],
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      enabled: !_dangNhanTin,
-                      textInputAction: TextInputAction.send,
-                      style: GoogleFonts.manrope(
-                        fontSize: 14,
-                        color: const Color(0xFF2E2C3D),
-                        fontWeight: FontWeight.w500,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Nhập câu hỏi của bạn',
-                        hintStyle: GoogleFonts.manrope(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 18, right: 8, top: 4, bottom: 4),
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        enabled: !_dangNhanTin,
+                        keyboardType: TextInputType.multiline,
+                        minLines: 1,
+                        maxLines: 5,
+                        textCapitalization: TextCapitalization.sentences,
+                        style: GoogleFonts.manrope(
                           fontSize: 14,
-                          color: const Color(0xFF9E9DB0),
-                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFF2E2C3D),
+                          fontWeight: FontWeight.w500,
+                          height: 1.4,
                         ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 18),
+                        decoration: InputDecoration(
+                          hintText: 'Nhập câu hỏi của bạn...',
+                          hintStyle: GoogleFonts.manrope(
+                            fontSize: 14,
+                            color: const Color(0xFF9E9DB0),
+                            fontWeight: FontWeight.w400,
+                          ),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
                       ),
-                      onSubmitted: (_) => _guiTinNhan(),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.only(right: 6, bottom: 4),
                     child: IconButton(
                       icon: const Icon(
                         Icons.near_me_outlined,
-                        color: Color(0xFFB3B1C5),
-                        size: 22,
+                        color: Color(0xFF7C4DFF),
+                        size: 24,
                       ),
                       onPressed: _dangNhanTin ? null : () => _guiTinNhan(),
                     ),

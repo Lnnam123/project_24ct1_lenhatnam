@@ -558,6 +558,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
         onXoaNganSach: _xoaNganSach,
       ),
       ManHinhBaoCao(
+        nguoiDung: nguoiDung,
         danhSachGiaoDich: _danhSachGiaoDich,
         moSuaGiaoDich: _moModalSuaGiaoDich,
         coThongBaoChuaDoc: _coThongBaoChuaDoc,
@@ -572,6 +573,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
         onRefresh: _taiDuLieuTuDatabase,
       ),
       ManHinhViTien(
+        nguoiDung: nguoiDung,
         danhSachVi: _danhSachVi,
         danhSachGiaoDich: _danhSachGiaoDich,
         moThemViTien: _moModalQuanLyViTien,

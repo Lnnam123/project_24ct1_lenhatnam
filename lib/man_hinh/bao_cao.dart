@@ -6,9 +6,11 @@ import '../chu_de/mau_sac.dart';
 import '../dich_vu/time_service.dart';
 import 'chi_tiet_giao_dich.dart';
 import '../thanh_phan/skeleton_loading.dart';
+import '../thanh_phan/nut_ai_chat_floating.dart';
 
 class ManHinhBaoCao extends StatefulWidget {
   static const String tenTrang = 'Báo cáo';
+  final NguoiDung? nguoiDung;
   final List<GiaoDich> danhSachGiaoDich;
   final VoidCallback onTapThongBao;
   final bool coThongBaoChuaDoc;
@@ -17,6 +19,7 @@ class ManHinhBaoCao extends StatefulWidget {
 
   const ManHinhBaoCao({
     super.key, 
+    this.nguoiDung,
     required this.danhSachGiaoDich, 
     required this.onTapThongBao,
     required this.coThongBaoChuaDoc, 
@@ -160,27 +163,35 @@ class _ManHinhBaoCaoState extends State<ManHinhBaoCao> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildFilterTabs(),
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
-                itemCount: _danhSachKy.length,
-                itemBuilder: (context, index) {
-                  final kyHienTai = _danhSachKy[index];
-                  return _buildPageContent(kyHienTai);
-                },
-              ),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                _buildFilterTabs(),
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentIndex = index;
+                      });
+                    },
+                    itemCount: _danhSachKy.length,
+                    itemBuilder: (context, index) {
+                      final kyHienTai = _danhSachKy[index];
+                      return _buildPageContent(kyHienTai);
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          NutAiChatFloating(
+            nguoiDung: widget.nguoiDung,
+            heroTag: 'ai_chat_bao_cao',
+          ),
+        ],
       ),
     );
   }
@@ -772,19 +783,14 @@ class _ManHinhBaoCaoState extends State<ManHinhBaoCao> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Container(
-                      width: 24,
                       height: 24,
                       alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: isToday ? MauSac.primary : Colors.transparent,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
                       child: Text(
                         '$day',
                         style: GoogleFonts.manrope(
                           fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: isToday ? Colors.white : MauSac.onSurfaceVariant,
+                          fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
+                          color: isToday ? MauSac.primary : MauSac.onSurfaceVariant,
                         ),
                       ),
                     ),

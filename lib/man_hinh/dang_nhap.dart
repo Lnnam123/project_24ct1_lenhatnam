@@ -77,6 +77,7 @@ class _ManHinhDangNhapState extends State<ManHinhDangNhap> {
         await prefs.setString('saved_user_email', user.email);
 
         if (!mounted) return;
+        // hàm trả về màn hình chính khi người dùng đăng nhập được
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => ManHinhChinh(nguoiDung: user)),
         );
@@ -91,10 +92,7 @@ class _ManHinhDangNhapState extends State<ManHinhDangNhap> {
       if (!mounted) return;
       final msg = e.toString().replaceAll('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          backgroundColor: Colors.red.shade700,
-        ),
+        SnackBar(content: Text(msg), backgroundColor: Colors.red.shade700),
       );
     }
   }

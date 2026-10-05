@@ -1,191 +1,335 @@
-# CoinTap - Hệ Thống Quản Lý Tài Chính Cá Nhân Thông Minh & Cổng Quản Trị AI
+<div align="center">
 
-> **Phiên bản hiện tại**: `v1.5.3` (Build `+11`)  
-> **Nền tảng**: Ứng dụng Di động Flutter (Android / iOS) & Cổng Quản trị Web Admin (React + Vite)  
-> **Cơ sở dữ liệu**: Supabase (PostgreSQL) với bảo mật cấp hàng (RLS)  
-> **Trí tuệ nhân tạo**: Trợ lý tài chính tích hợp Google Gemini AI  
+# 💰 CoinTap
+### Hệ Thống Quản Lý Tài Chính Cá Nhân Thông Minh & Cổng Quản Trị AI
+
+[![Flutter Version](https://img.shields.io/badge/Flutter-3.13+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Dart Version](https://img.shields.io/badge/Dart-3.0+-0175C2?logo=dart&logoColor=white)](https://dart.dev)
+[![React Version](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
+[![Vite](https://img.shields.io/badge/Vite-6.0+-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
+[![Google Gemini AI](https://img.shields.io/badge/Google_Gemini-AI_Assistant-8E75C2?logo=google&logoColor=white)](https://ai.google.dev)
+[![Latest Release](https://img.shields.io/badge/Release-v1.5.3-success.svg)](https://github.com/Lnnam123/project_24ct1_lenhatnam/releases)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+*Đồ án môn học: **Công Nghệ Phần Mềm** | Sinh viên thực hiện: **Lê Nhật Nam** (Lớp: **24CT1**)*
+
+[🌟 Giới Thiệu](#-giới-thiệu-dự-án) •
+[🏛️ Kiến Trúc](#️-kiến-trúc-hệ-thống) •
+[✨ Tính Năng](#-tính-năng-nổi-bật) •
+[📂 Cấu Trúc Dự Án](#-cấu-trúc-thư-mục) •
+[🗄️ Cơ Sở Dữ Liệu](#️-cơ-sở-dữ-liệu-supabase) •
+[🚀 Cài Đặt & Khởi Chạy](#-hướng-dẫn-cài-đặt--khởi-chạy) •
+[🔄 Cập Nhật OTA](#-quy-trình-phát-hành-cập-nhật-ota) •
+[📑 Tài Liệu](#-tài-liệu-đồ-án-liên-quan)
 
 ---
+
+</div>
 
 ## 🌟 Giới Thiệu Dự Án
 
-**CoinTap** là giải pháp toàn diện hỗ trợ người dùng theo dõi dòng tiền, quản lý ngân sách và tư vấn chi tiêu thông minh. Hệ thống bao gồm 2 thành phần cốt lõi:
-1. **Ứng dụng Di động CoinTap Mobile (Flutter)**: Dành cho người dùng cá nhân quản lý thu chi hàng ngày, biểu đồ phân tích, ví tiền, trò chuyện với Trợ lý AI và tự động nhận bản cập nhật mới trực tiếp qua OTA.
-2. **Cổng Quản trị CoinTap Web Admin (React + Vite)**: Dành cho Quản trị viên giám sát tình trạng hệ thống, quản lý người dùng & quản trị viên, theo dõi lưu lượng truy vấn AI (KeyStream Metrics), quản lý kho biểu tượng danh mục chuẩn Google Material Icons và phát thông báo toàn ứng dụng.
+**CoinTap** là một giải pháp quản lý tài chính cá nhân hiện đại theo mô hình đa nền tảng, giải quyết triệt để vấn đề theo dõi dòng tiền hàng ngày của người dùng nhờ sự hỗ trợ của **Trí tuệ nhân tạo (Google Gemini AI)** cùng hệ sinh thái quản trị thông minh:
+
+1. **📱 Ứng dụng Di động CoinTap Mobile (Flutter)**:
+   - Giao diện người dùng hiện đại, tối ưu trải nghiệm (UX) với phong cách thiết kế mượt mà, hỗ trợ Dark/Light Theme.
+   - Quản lý giao dịch thu/chi, chuyển tiền giữa các ví, thiết lập hạn mức ngân sách và phân tích dòng tiền chuyên sâu bằng biểu đồ trực quan.
+   - Tích hợp **Trợ lý Tài chính AI (Gemini AI)**: Nút chat nổi thông minh, bóc tách hóa đơn tự động và tương tác giọng nói.
+   - Cơ chế cập nhật ứng dụng tự động qua giao thức **OTA (Over-The-Air)** trực tiếp từ GitHub Releases.
+
+2. **💻 Cổng Quản trị CoinTap Web Admin (React + Vite)**:
+   - Dành riêng cho Quản trị viên quản lý toàn bộ hệ sinh thái: giám sát người dùng, phê duyệt/khóa tài khoản, phát thông báo Broadcast toàn hệ thống.
+   - Quản lý danh mục thu/chi và thư viện biểu tượng chuẩn **Google Material Symbols** đồng bộ thời gian thực sang Mobile.
+   - Bảng điều khiển giám sát AI (**KeyStream Metrics**): Theo dõi số lượt gọi API, lượng tiêu thụ Token, phân bổ model và ước tính chi phí vận hành.
 
 ---
 
-## 🚀 Tính Năng Nổi Bật
+## 🏛️ Kiến Trúc Hệ Thống
 
-### 1. Ứng dụng Di động (CoinTap Mobile)
-- **Quản lý thu chi & Giao dịch**: Thêm, sửa, xóa các khoản chi tiêu/thu nhập nhanh chóng kèm phân loại danh mục, ví nguồn và ghi chú.
-- **Trợ lý Tài chính AI (Gemini AI)**: Tích hợp nút chat nổi (floating chatbot), phân tích thói quen tiêu dùng, đưa ra lời khuyên tối ưu ngân sách theo thời gian thực.
-- **Phân tích & Báo cáo trực quan**: Biểu đồ phân bổ chi tiêu, thống kê dòng tiền theo tuần, tháng, năm.
-- **Ví tiền & Hạn mức Ngân sách**: Quản lý nhiều tài khoản/ví, cảnh báo khi chi tiêu chạm ngưỡng ngân sách đặt ra.
-- **Đồng bộ Thư viện Biểu tượng**: Tự động nhận diện và hiển thị các biểu tượng danh mục phong phú do Admin thêm vào từ Web.
-- **Cập nhật tự động (OTA Update)**: Kiểm tra và tải bản cập nhật `.apk` mới nhất trực tiếp từ GitHub Releases mà không cần thông qua Google Play Store.
-- **Bảo mật & Đăng nhập nhanh**: Hỗ trợ đăng nhập nhanh bằng mã PIN, xác thực OTP qua Email, khôi phục mật khẩu an toàn.
+Dự án áp dụng mô hình kiến trúc phân tầng kết hợp **BaaS (Backend-as-a-Service)** trên nền tảng Supabase:
 
-### 2. Cổng Quản trị (CoinTap Web Admin)
-- **Bảng Điều khiển Tổng quan**: Theo dõi thời gian thực số lượng tài khoản, số phiên AI, tổng tokens tiêu thụ và giám sát tình trạng hạ tầng/dịch vụ (Supabase, Gemini AI, Push Service, Client App).
-- **Quản lý Người dùng & Trạng thái**: Tra cứu người dùng, kiểm soát trạng thái tài khoản (*Hoạt động*, *Tạm ngưng*, *Khóa*, *Xóa*) và đồng bộ thông báo tức thì về thiết bị di động.
-- **Quản lý Danh mục & Biểu tượng**: Quản lý danh mục thu/chi toàn hệ thống, tích hợp bộ sưu tập biểu tượng Google Material Symbols đa dạng và tự động đồng bộ sang ứng dụng di động.
-- **Giám sát & Nhật ký Trí tuệ Nhân tạo (Gemini AI)**: Giám sát lưu lượng KeyStream, lịch sử truy vấn 7 ngày qua, phân bổ model (`gemini-flash-latest`, `gemini-2.5-flash`), chi phí ước tính (USD/VND) và chi tiết từng phiên hội thoại.
-- **Phát Thông báo Toàn ứng dụng**: Soạn thảo và gửi thông báo bảo trì, cập nhật phiên bản hoặc tin tức quan trọng tới toàn bộ người dùng.
-- **Chính sách Quyền riêng tư Zero-Knowledge**: Kiến trúc hệ thống cam kết tôn trọng quyền riêng tư, không thu thập dữ liệu giao dịch nhạy cảm của người dùng.
+```mermaid
+graph TB
+    subgraph ClientLayer ["Lớp Ứng Dụng (Client Layer)"]
+        Mobile["📱 CoinTap Mobile App<br/>(Flutter / Dart)"]
+        WebAdmin["💻 CoinTap Web Admin<br/>(React 19 / Vite / Chart.js)"]
+    end
 
----
+    subgraph ServiceLayer ["Lớp Dịch Vụ Ngoại Vi (Services)"]
+        GeminiAI["🤖 Google Gemini AI API<br/>(gemini-2.5-flash)"]
+        MailService["📧 SMTP Mailer Service<br/>(Xác thực OTP 6 số)"]
+        OTA["🔄 GitHub Releases API<br/>(Cập nhật OTA APK tự động)"]
+    end
 
-## 📂 Cấu Trúc Cây Thư Mục (Project Directory Tree)
+    subgraph BackendLayer ["Lớp Dữ Liệu & Backend (Supabase BaaS)"]
+        Auth["🔐 Supabase Auth & RLS<br/>(Bảo mật cấp hàng)"]
+        Postgres[("🗄️ PostgreSQL Database<br/>(Giao dịch, Ví, Ngân sách, AI Chat)")]
+        Storage["📦 Supabase Storage<br/>(Ảnh đại diện, Hóa đơn)"]
+    end
 
-```text
-project_24ct_lenhatnam/
-├── android/                             # Mã nguồn Native Android & cấu hình build Gradle
-├── database/                            # Kịch bản cơ sở dữ liệu Supabase (PostgreSQL)
-│   ├── database_tieng_viet.sql          # Schema CSDL chuẩn hóa tiếng Việt toàn hệ thống
-│   ├── schema.sql                       # Schema ban đầu
-│   ├── schema_admins.sql                # Bảng quản trị viên và phân quyền
-│   ├── schema_ai_chat.sql               # Bảng lưu trữ cuộc trò chuyện và tin nhắn AI
-│   └── supabase_database_export.sql     # Bản xuất dữ liệu mẫu
-├── lib/                                 # MÃ NGUỒN CHÍNH ỨNG DỤNG FLUTTER MOBILE
-│   ├── chu_de/                          # Cấu hình chủ đề, bảng màu giao diện
-│   │   └── mau_sac.dart
-│   ├── dich_vu/                         # Các dịch vụ kết nối ngoại vi
-│   │   ├── email_service.dart           # Dịch vụ gửi email xác thực / OTP
-│   │   ├── notification_service.dart    # Dịch vụ thông báo nội bộ
-│   │   ├── time_service.dart            # Định dạng và xử lý thời gian
-│   │   └── update_service.dart          # Kiểm tra và tải bản cập nhật OTA (GitHub Releases)
-│   ├── du_lieu/                         # Tầng kết nối & truy vấn CSDL Supabase
-│   │   └── database_helper.dart
-│   ├── man_hinh/                        # Các màn hình giao diện người dùng (Screens)
-│   │   ├── bao_cao.dart                 # Màn hình báo cáo & biểu đồ tài chính
-│   │   ├── cai_dat.dart                 # Màn hình cài đặt & kiểm tra phiên bản
-│   │   ├── chi_tiet_giao_dich.dart      # Xem & chỉnh sửa giao dịch
-│   │   ├── chi_tiet_phan_tich.dart      # Phân tích sâu từng khoản mục chi tiêu
-│   │   ├── chi_tiet_thu_chi.dart        # Danh sách lịch sử thu chi
-│   │   ├── chi_tiet_vi.dart             # Quản lý số dư và giao dịch theo từng ví
-│   │   ├── dang_ky.dart                 # Đăng ký tài khoản mới
-│   │   ├── dang_nhap.dart               # Đăng nhập bằng Email/Mật khẩu
-│   │   ├── dang_nhap_nhanh.dart         # Đăng nhập nhanh bằng mã PIN cá nhân
-│   │   ├── dat_lai_mat_khau.dart        # Thiết lập lại mật khẩu sau OTP
-│   │   ├── dieu_khoan.dart              # Điều khoản sử dụng & chính sách bảo mật
-│   │   ├── doi_mat_khau.dart            # Đổi mật khẩu trong cài đặt
-│   │   ├── quan_ly_danh_muc.dart        # Danh sách danh mục thu chi
-│   │   ├── quan_ly_ngan_sach.dart       # Quản lý hạn mức chi tiêu theo tháng
-│   │   ├── quen_mat_khau.dart           # Gửi mã xác nhận quên mật khẩu
-│   │   ├── them_danh_muc.dart           # Tạo mới danh mục kèm chọn icon phong phú
-│   │   ├── thong_bao.dart               # Hộp thư thông báo hệ thống
-│   │   ├── thong_tin_ca_nhan.dart       # Xem và chỉnh sửa hồ sơ người dùng
-│   │   ├── tong_quan.dart               # Màn hình chính Dashboard tổng quan
-│   │   ├── tro_ly_ai.dart               # Giao diện hội thoại tương tác với Gemini AI
-│   │   ├── vi_tien.dart                 # Danh sách các tài khoản / ví thanh toán
-│   │   └── xac_thuc_otp.dart            # Màn hình nhập mã xác thực OTP 6 số
-│   ├── mo_hinh/                         # Các mô hình dữ liệu (Models)
-│   │   └── du_lieu.dart                 # NguoiDung, GiaoDich, DanhMuc, ViTien, NganSach...
-│   ├── thanh_phan/                      # Các thành phần giao diện tái sử dụng (Components)
-│   │   ├── modal_doi_danh_muc.dart      # Bottom sheet chuyển đổi danh mục
-│   │   ├── modal_ngan_sach.dart         # Hộp thoại tạo/sửa ngân sách
-│   │   ├── modal_quan_ly_vi_tien.dart   # Hộp thoại tạo/sửa ví tiền
-│   │   ├── modal_them_giao_dich.dart    # Giao diện ghi nhanh giao dịch thu/chi
-│   │   ├── nut_ai_chat_floating.dart    # Nút nổi AI Chatbot tương tác nhanh
-│   │   └── skeleton_loading.dart        # Hiệu ứng mờ chuyển động khi tải dữ liệu
-│   ├── tien_ich/                        # Tiện ích bổ trợ (Utilities)
-│   │   └── bieu_tuong_helper.dart       # Bảng ánh xạ icon Google Material Symbols
-│   └── main.dart                        # Điểm khởi chạy ứng dụng Flutter & định tuyến
-├── web_admin/                           # MÃ NGUỒN CỔNG QUẢN TRỊ COINTAP WEB ADMIN (REACT)
-│   ├── public/                          # Tài nguyên tĩnh
-│   ├── src/
-│   │   ├── assets/                      # Hình ảnh, SVG, logo
-│   │   ├── dich_vu/                     # Tầng giao tiếp API & Supabase
-│   │   │   ├── api.js                   # API nghiệp vụ người dùng, danh mục, AI, thống kê
-│   │   │   └── supabase.js              # Khởi tạo kết nối Supabase Client
-│   │   ├── man_hinh/                    # Các trang chức năng chính của Quản trị viên
-│   │   │   ├── DangNhap.jsx             # Đăng nhập bảo mật trang Quản trị
-│   │   │   ├── DanhMuc.jsx              # Quản lý danh mục & kho biểu tượng Google Icons
-│   │   │   ├── NguoiDung.jsx            # Quản lý người dùng, trạng thái tài khoản
-│   │   │   ├── NhatKyAI.jsx             # Giám sát hội thoại AI, KeyStream, biểu đồ 7 ngày
-│   │   │   ├── QuanTriVien.jsx          # Quản lý danh sách tài khoản Admin
-│   │   │   ├── ThongBao.jsx             # Phát thông báo toàn hệ thống
-│   │   │   └── TongQuan.jsx             # Dashboard tổng quan chỉ số & giám sát hạ tầng
-│   │   ├── thanh_phan/                  # Các component giao diện dùng chung
-│   │   │   ├── HopThoai.jsx             # Modal dialog tùy biến
-│   │   │   ├── HopThoaiXacNhan.jsx      # Hộp thoại xác nhận thao tác quan trọng
-│   │   │   ├── ThanhBen.jsx             # Sidebar điều hướng trang
-│   │   │   ├── ThanhTren.jsx            # Header hiển thị thông tin admin, chế độ sáng/tối
-│   │   │   └── TheThongKe.jsx           # Card hiển thị chỉ số thống kê
-│   │   ├── App.css                      # Phong cách thiết kế chính
-│   │   ├── App.jsx                      # Định tuyến và khung ứng dụng Admin
-│   │   ├── index.css                    # Design system tokens và biến giao diện
-│   │   └── main.jsx                     # Điểm khởi chạy React (Entry point)
-│   ├── index.html                       # HTML gốc cho Web Admin
-│   ├── package.json                     # Quản lý phụ thuộc Node.js (v1.5.3)
-│   └── vite.config.js                   # Cấu hình đóng gói Vite
-├── pubspec.yaml                         # Quản lý cấu hình & phiên bản Flutter (1.5.3+11)
-└── README.md                            # Tài liệu hướng dẫn toàn diện dự án
+    Mobile <--> |REST / Realtime| Auth
+    Mobile <--> |Queries / RPC| Postgres
+    WebAdmin <--> |Admin Queries / RPC| Postgres
+    WebAdmin <--> |Quản lý Users| Auth
+    
+    Mobile <--> |Prompt / AI Chatbot| GeminiAI
+    WebAdmin <--> |KeyStream Metrics / Log| GeminiAI
+    Mobile <--> |Gửi mã OTP xác thực| MailService
+    Mobile <--> |Kiểm tra version & tải APK| OTA
 ```
 
 ---
 
-## 🛠️ Hướng Dẫn Cài Đặt & Khởi Chạy
+## ✨ Tính Năng Nổi Bật
 
-### 1. Yêu Cầu Môi Trường
-- **Flutter SDK**: `>= 3.13.0`
-- **Node.js**: `>= 18.0.0`
-- **Android SDK**: `compileSdk 37` (hỗ trợ Java 8 `coreLibraryDesugaring`)
+### 1. Ứng Dụng Di Động (CoinTap Mobile)
+- **⚡ Ghi Chép Thu Chi Siêu Nhanh**:
+  - Giao diện nhập liệu thông minh với bàn phím tự format hàng nghìn theo thời gian thực (`CurrencyInputFormatter`).
+  - Hỗ trợ phân loại danh mục, chọn ví nguồn/đích, chọn ngày giờ trực quan và đính kèm ghi chú.
+  - Cảnh báo tức thì nếu số tiền chi tiêu vượt quá số dư khả dụng trong ví.
+- **🤖 Trợ Lý Tài Chính Thông Minh (Google Gemini AI)**:
+  - Nút bấm AI nổi (`NutAIChatFloating`) luôn sẵn sàng hỗ trợ người dùng trên màn hình chính.
+  - Tư vấn kế hoạch tiết kiệm, phân tích thói quen tiêu xài dựa trên lịch sử giao dịch thực tế.
+  - Hỗ trợ mô phỏng bóc tách giao dịch từ hóa đơn chụp ảnh hoặc giọng nói.
+- **📊 Báo Cáo & Phân Tích Tài Chính Đa Chiều**:
+  - Biểu đồ tròn phân bổ chi tiêu theo danh mục.
+  - Biểu đồ cột dòng tiền ròng theo tuần, tháng và năm.
+  - Bộ lọc nâng cao theo ví, danh mục và khoảng thời gian tùy chọn.
+- **👛 Quản Lý Đa Tài Khoản & Ví Tiền**:
+  - Hỗ trợ nhiều loại ví: Tiền mặt, Thẻ tín dụng, Tài khoản ngân hàng, Ví điện tử (MoMo, ZaloPay,...).
+  - Chuyển tiền qua lại giữa các ví kèm ghi nhận lịch sử biến động số dư.
+- **🎯 Quản Lý Hạn Mức Ngân Sách**:
+  - Đặt ngân sách chi tiêu hàng tháng theo từng danh mục.
+  - Đo lường tiến độ chi tiêu theo thang phần trăm (xanh: an toàn, vàng: cảnh báo, đỏ: vượt ngưỡng).
+- **🔒 Xác Thực Đa Lớp & Bảo Mật Cao**:
+  - Đăng nhập bảo mật bằng Email/Mật khẩu hoặc **Mã PIN 6 số cá nhân**.
+  - Đăng nhập sinh trắc học vân tay / Face ID thông qua thư viện `local_auth`.
+  - Khôi phục mật khẩu thông qua mã xác thực **OTP 6 số gửi qua Email**.
+- **🔄 Cập Nhật Ứng Dụng Tự Động (OTA Updates)**:
+  - Tự động kiểm tra bản cập nhật mới nhất từ GitHub Releases khi mở app hoặc trong menu Cài đặt.
+  - Tải trực tiếp file `.apk` và mở trình cài đặt hệ thống không cần qua CH Play.
+
+### 2. Cổng Quản Trị Hệ Thống (CoinTap Web Admin)
+- **📈 Dashboard Tổng Quan**:
+  - Hiển thị các chỉ số KPI theo thời gian thực: Tổng người dùng, tài khoản hoạt động, số phiên hội thoại AI, lượng tokens tiêu thụ.
+  - Kiểm tra tình trạng sức khỏe hạ tầng hệ thống (Health Check) đối với Supabase, Gemini AI và Push Service.
+- **👥 Quản Lý Người Dùng & Phân Quyền**:
+  - Tra cứu danh sách người dùng với đầy đủ thông tin, trạng thái tài khoản.
+  - Thao tác khóa (*Banned*), tạm ngưng (*Suspended*) hoặc kích hoạt lại người dùng.
+- **🏷️ Quản Lý Danh Mục & Kho Biểu Tượng**:
+  - Thêm, sửa, xóa danh mục chi tiêu/thu nhập dùng chung cho toàn bộ hệ thống.
+  - Tích hợp bộ sưu tập biểu tượng chuẩn **Google Material Symbols**, đồng bộ tự động sang Mobile App.
+- **🧠 Giám Sát Chi Phí & Nhật Ký Gemini AI**:
+  - Bảng thống kê **KeyStream Metrics**: Lưu lượng truy vấn 7 ngày gần nhất, tỷ lệ phân bổ model (`gemini-2.5-flash`), ước tính chi phí theo USD và VNĐ.
+  - Xem chi tiết từng phiên hội thoại giữa người dùng và AI nhằm cải thiện chất lượng phản hồi.
+- **📢 Phát Thông Báo Hệ Thống (Broadcast)**:
+  - Gửi thông báo bảo trì, tin tức sự kiện hoặc cập nhật phiên bản đến toàn bộ người dùng.
 
 ---
 
-### 2. Cài Đặt & Chạy Ứng Dụng Flutter Mobile
+## 📂 Cấu Trúc Thư Mục
+
+```text
+project_24ct_lenhatnam/
+├── .env                                  # Biến môi trường bảo mật (API Keys, Supabase URL)
+├── .env.example                          # File mẫu cấu hình biến môi trường
+├── pubspec.yaml                          # Quản lý thư viện và phiên bản Flutter (v1.5.3+11)
+├── android/                              # Cấu hình Native Android, Gradle và quyền hệ thống
+├── database/                             # Tập lệnh SQL khởi tạo và cấu trúc CSDL Supabase
+│   ├── database_tieng_viet.sql           # Schema CSDL chuẩn hóa toàn bộ tiếng Việt
+│   ├── schema.sql                        # Schema gốc khởi tạo
+│   ├── schema_admins.sql                 # Bảng quản trị viên và quyền hạn
+│   ├── schema_ai_chat.sql                # Bảng lưu trữ phiên và tin nhắn AI Chat
+│   └── supabase_database_export.sql      # Dữ liệu xuất mẫu
+├── lib/                                  # MÃ NGUỒN CHÍNH FLUTTER MOBILE
+│   ├── main.dart                         # Điểm khởi chạy ứng dụng & định tuyến
+│   ├── chu_de/                           # Hệ thống thiết kế màu sắc và giao diện
+│   │   └── mau_sac.dart
+│   ├── dich_vu/                          # Tầng dịch vụ giao tiếp ngoại vi
+│   │   ├── email_service.dart            # Gửi mã OTP xác thực qua Email (SMTP)
+│   │   ├── notification_service.dart     # Quản lý thông báo local
+│   │   ├── time_service.dart             # Xử lý múi giờ và định dạng thời gian
+│   │   └── update_service.dart           # Kiểm tra và cập nhật ứng dụng OTA từ GitHub
+│   ├── du_lieu/                          # Tầng giao tiếp dữ liệu Supabase
+│   │   └── database_helper.dart          # Lớp Singleton thực hiện CRUD dữ liệu
+│   ├── mo_hinh/                          # Các lớp đối tượng dữ liệu (Models)
+│   │   └── du_lieu.dart                  # NguoiDung, GiaoDich, ViTien, DanhMuc, NganSach...
+│   ├── man_hinh/                         # Các màn hình người dùng (Views / Screens)
+│   │   ├── bao_cao.dart                  # Màn hình biểu đồ báo cáo tài chính
+│   │   ├── cai_dat.dart                  # Cài đặt, bảo mật, thông tin phiên bản
+│   │   ├── chi_tiet_giao_dich.dart       # Chi tiết và lịch sử chỉnh sửa giao dịch
+│   │   ├── chi_tiet_phan_tich.dart       # Phân tích sâu dòng tiền theo danh mục
+│   │   ├── chi_tiet_thu_chi.dart         # Danh sách phân loại các khoản thu chi
+│   │   ├── chi_tiet_vi.dart              # Quản lý số dư và giao dịch theo từng ví
+│   │   ├── dang_ky.dart                  # Đăng ký tài khoản người dùng
+│   │   ├── dang_nhap.dart                # Đăng nhập bằng Email / Mật khẩu
+│   │   ├── dang_nhap_nhanh.dart          # Đăng nhập nhanh bằng mã PIN cá nhân / Sinh trắc học
+│   │   ├── dat_lai_mat_khau.dart         # Đặt lại mật khẩu mới sau khi xác thực OTP
+│   │   ├── dieu_khoan.dart               # Điều khoản dịch vụ và chính sách bảo mật
+│   │   ├── doi_mat_khau.dart             # Đổi mật khẩu trong tài khoản
+│   │   ├── quan_ly_danh_muc.dart         # Quản lý danh mục cá nhân hóa
+│   │   ├── quan_ly_ngan_sach.dart        # Thiết lập và theo dõi hạn mức ngân sách
+│   │   ├── quen_mat_khau.dart            # Yêu cầu gửi OTP quên mật khẩu
+│   │   ├── them_danh_muc.dart            # Thêm mới danh mục kèm chọn icon phong phú
+│   │   ├── thong_bao.dart                # Hộp thư thông báo hệ thống
+│   │   ├── thong_tin_ca_nhan.dart        # Cập nhật thông tin và hồ sơ cá nhân
+│   │   ├── tong_quan.dart                # Dashboard tổng quan tài chính
+│   │   ├── tro_ly_ai.dart                # Màn hình trò chuyện chuyên sâu với Gemini AI
+│   │   ├── vi_tien.dart                  # Quản lý danh sách các tài khoản ví
+│   │   └── xac_thuc_otp.dart             # Xác minh mã OTP 6 chữ số
+│   ├── thanh_phan/                       # Các Widget tái sử dụng (Components)
+│   │   ├── modal_doi_danh_muc.dart       # Bottom sheet đổi danh mục
+│   │   ├── modal_ngan_sach.dart          # Modal thêm / sửa ngân sách
+│   │   ├── modal_quan_ly_vi_tien.dart    # Modal thêm / sửa ví tiền
+│   │   ├── modal_them_giao_dich.dart     # Modal thêm giao dịch đa chức năng
+│   │   ├── nut_ai_chat_floating.dart     # Nút AI nổi di chuyển tự do trên màn hình
+│   │   └── skeleton_loading.dart         # Hiệu ứng Shimmer khi tải dữ liệu
+│   └── tien_ich/                         # Tiện ích bổ trợ
+│       └── bieu_tuong_helper.dart        # Bản đồ biểu tượng Google Material Symbols
+├── web_admin/                            # MÃ NGUỒN CỔNG QUẢN TRỊ ADMIN (REACT + VITE)
+│   ├── src/
+│   │   ├── dich_vu/                      # API kết nối Supabase Client
+│   │   │   ├── api.js                    # Nghiệp vụ lấy số liệu, quản lý User, danh mục
+│   │   │   └── supabase.js               # Khởi tạo kết nối Supabase JS
+│   │   ├── man_hinh/                     # Các trang quản trị viên
+│   │   │   ├── DangNhap.jsx              # Đăng nhập trang Admin
+│   │   │   ├── DanhMuc.jsx               # Quản lý danh mục & kho icon Material Symbols
+│   │   │   ├── NguoiDung.jsx             # Quản lý trạng thái và danh sách người dùng
+│   │   │   ├── NhatKyAI.jsx              # Giám sát KeyStream và lịch sử AI
+│   │   │   ├── QuanTriVien.jsx           # Phân quyền danh sách tài khoản Admin
+│   │   │   ├── ThongBao.jsx              # Soạn thảo và phát thông báo Broadcast
+│   │   │   └── TongQuan.jsx              # Dashboard tổng quan và đo lường hệ thống
+│   │   ├── thanh_phan/                   # Các component giao diện dùng chung
+│   │   ├── App.jsx                       # Định tuyến các trang quản trị
+│   │   └── main.jsx                      # Điểm vào ứng dụng React
+│   ├── package.json                      # Quản lý gói phụ thuộc Node.js
+│   └── vite.config.js                    # Cấu hình đóng gói Vite
+└── README.md                             # Tài liệu tổng quan dự án
+```
+
+---
+
+## 🗄️ Cơ Sở Dữ Liệu (Supabase)
+
+Hệ thống sử dụng cơ sở dữ liệu quan hệ **PostgreSQL** được lưu trữ trên nền tảng Supabase với cơ chế bảo mật **Row Level Security (RLS)**:
+
+| Tên Bảng | Mô Tả Chức Năng | Quan Hệ / Ràng Buộc Chính |
+| :--- | :--- | :--- |
+| `nguoidung` | Lưu trữ hồ sơ người dùng, mã PIN, avatar, trạng thái tài khoản | Khóa chính `id` |
+| `vitien` | Danh sách tài khoản / ví tiền của người dùng | `id_nguoidung` tham chiếu `nguoidung(id)` |
+| `danhmuc` | Danh mục thu / chi kèm tên icon Material | `id_nguoidung` tham chiếu `nguoidung(id)` (hoặc NULL nếu là mặc định hệ thống) |
+| `giaodich` | Bản ghi các giao dịch thu, chi, chuyển tiền | Tham chiếu `nguoidung`, `danhmuc`, `vitien` |
+| `ngansach` | Hạn mức chi tiêu thiết lập theo tháng | Tham chiếu `nguoidung`, `danhmuc` |
+| `thongbao` | Thông báo gửi tới cá nhân hoặc phát toàn hệ thống | Tham chiếu `nguoidung` |
+| `quantrivien` | Danh sách tài khoản quản trị cổng Web Admin | Xác thực riêng biệt cho phân hệ Admin |
+| `aichat_sessions` | Lưu trữ các phiên hội thoại với Gemini AI | `id_nguoidung` tham chiếu `nguoidung(id)` |
+| `aichat_messages` | Từng tin nhắn (User Prompt / Model Response) | Tham chiếu `aichat_sessions(id)` |
+
+---
+
+## 🚀 Hướng Dẫn Cài Đặt & Khởi Chạy
+
+### 1. Yêu Cầu Môi Trường (Prerequisites)
+- **Flutter SDK**: Phiên bản `>= 3.13.0` (Khuyên dùng `3.24.x` trở lên)
+- **Dart SDK**: Phiên bản `>= 3.0.0`
+- **Node.js**: Phiên bản `>= 18.0.0` (cho cổng Web Admin)
+- **Java Development Kit (JDK)**: Phiên bản `17`
+- **Android Studio / VS Code**: Đã cài đặt tiện ích Flutter & Dart
+
+---
+
+### 2. Cấu Hình Biến Môi Trường (.env)
+Tại thư mục gốc của dự án, sao chép file cấu hình mẫu `.env.example` thành `.env`:
 
 ```bash
-# 1. Cài đặt các thư viện Dart phụ thuộc
+# Trên Windows PowerShell:
+Copy-Item .env.example .env
+
+# Trên Linux / macOS:
+cp .env.example .env
+```
+
+Mở file `.env` và điền các khóa cấu hình dịch vụ:
+```env
+# Khóa API Gemini từ Google AI Studio (https://aistudio.google.com/)
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Thông số kết nối dự án Supabase (Project Settings -> API)
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
+```
+
+---
+
+### 3. Cài Đặt & Khởi Chạy Ứng Dụng Flutter Mobile
+
+```bash
+# 1. Tải các gói thư viện Dart phụ thuộc
 flutter pub get
 
-# 2. Kiểm tra thiết bị kết nối (máy ảo hoặc thiết bị thật)
+# 2. Kiểm tra danh sách thiết bị khả dụng (Máy ảo Android hoặc Điện thoại thật)
 flutter devices
 
 # 3. Khởi chạy ứng dụng ở chế độ Debug
 flutter run
+
+# 4. Đóng gói bản cài đặt APK chính thức (Release)
+flutter build apk --release
 ```
+*File APK xuất ra sẽ nằm tại đường dẫn: `build/app/outputs/flutter-apk/app-release.apk`*
 
 ---
 
-### 3. Cài Đặt & Chạy Cổng Quản Trị Web Admin
+### 4. Cài Đặt & Khởi Chạy Cổng Quản Trị Web Admin
 
 ```bash
 # 1. Di chuyển vào thư mục web_admin
 cd web_admin
 
-# 2. Cài đặt các gói phụ thuộc
+# 2. Cài đặt các gói phụ thuộc Node.js
 npm install
 
-# 3. Chạy máy chủ phát triển (Dev Server)
+# 3. Khởi chạy máy chủ phát triển (Development Server)
 npm run dev
+# Truy cập giao diện tại: http://localhost:5173
 
-# 4. Kiểm tra mã nguồn (Linter)
-npm run lint
-
-# 5. Đóng gói bản phát hành sản phẩm (Production Build)
+# 4. Đóng gói mã nguồn phục vụ môi trường Production
 npm run build
 ```
 
 ---
 
-## 🔄 Hướng Dẫn Phát Hành Bản Cập Nhật Tự Động (OTA Update)
+## 🔄 Quy Trình Phát Hành Cập Nhật OTA
 
-Hệ thống cập nhật OTA cho phép người dùng nhận phiên bản mới trực tiếp từ **GitHub Releases**:
+Ứng dụng CoinTap được tích hợp cơ chế cập nhật tự động (**OTA Update**) giúp người dùng luôn nhận được phiên bản mới nhất từ **GitHub Releases** mà không cần qua Google Play:
 
-1. Tăng số phiên bản trong [pubspec.yaml](file:///d:/DaiHoc/Nam3/congnghephanmem/project_24ct_lenhatnam/pubspec.yaml) (ví dụ: `1.5.3+11`).
-2. Đóng gói file APK ứng dụng:
+1. **Cập nhật phiên bản**: Mở file [pubspec.yaml](file:///d:/DaiHoc/Nam3/congnghephanmem/project_24ct_lenhatnam/pubspec.yaml), tăng mã phiên bản (Ví dụ: `version: 1.5.4+12`).
+2. **Build bản cài đặt**:
    ```bash
    flutter build apk --release
    ```
-3. Tạo một **Release** mới trên kho lưu trữ GitHub (ví dụ: Tag `v1.5.3`).
-4. Đính kèm file `app-release.apk` (nằm trong `build/app/outputs/flutter-apk/app-release.apk`) vào bản Release đó.
-5. Khi người dùng mở ứng dụng và vào mục **Cài đặt ➜ Kiểm tra cập nhật**, CoinTap sẽ tự động đối chiếu số phiên bản, hiển thị hộp thoại cập nhật và tải về cài đặt tự động.
+3. **Phát hành trên GitHub**:
+   - Truy cập mục **Releases** trên GitHub: [GitHub Releases CoinTap](https://github.com/Lnnam123/project_24ct1_lenhatnam/releases).
+   - Tạo thẻ phát hành mới (**Draft a new release**) với Tag tương ứng (VD: `v1.5.4`).
+   - Đính kèm file `app-release.apk` được tạo từ thư mục `build/app/outputs/flutter-apk/`.
+   - Xuất bản bản Release (**Publish release**).
+4. **Trải nghiệm phía người dùng**: Khi người dùng vào **Cài đặt ➜ Kiểm tra cập nhật**, hệ thống sẽ tự động đối chiếu version hiện tại với Tag mới nhất trên GitHub, hiển thị thông báo tải về và cài đặt trực tiếp.
 
 ---
 
-## 📄 Bản Quyền & Giấy Phép
+## 📑 Tài Liệu Đồ Án Liên Quan
 
-Dự án được xây dựng và phát triển phục vụ mục đích học tập, nghiên cứu môn **Công Nghệ Phần Mềm**. Mọi quyền được bảo lưu.
+Dự án đi kèm bộ tài liệu phân tích và đặc tả yêu cầu phần mềm chi tiết phục vụ báo cáo:
+- 📘 [Tài Liệu Phân Tích Yêu Cầu Phần Mềm (SRS)](TAI_LIEU_PHAN_TICH_YEU_CAU.md)
+- 📊 [Bảng Phân Tích Yêu Cầu Chức Năng (FR) & Phi Chức Năng (NFR)](BANG_PHAN_TICH_YEU_CAU_FR_NFR.md)
+- 📑 [Bảng Dữ Liệu FR & NFR Định Dạng CSV](BANG_PHAN_TICH_YEU_CAU_FR_NFR.csv)
+
+---
+
+## 👨‍💻 Tác Giả & Bản Quyền
+
+- **Họ và tên**: Lê Nhật Nam
+- **Lớp**: 24CT1
+- **Khoa**: Công Nghệ Thông Tin
+- **Kho lưu trữ GitHub**: [Lnnam123/project_24ct1_lenhatnam](https://github.com/Lnnam123/project_24ct1_lenhatnam)
+- **Giấy phép (License)**: Dự án được phát triển phục vụ mục đích học tập và nghiên cứu môn **Công Nghệ Phần Mềm**. Mọi quyền được bảo lưu.

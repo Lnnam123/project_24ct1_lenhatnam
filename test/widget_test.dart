@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:project_24ct_lenhatnam/main.dart';
 
-import 'package:project_24ct_lenhatnam/man_hinh/dang_nhap.dart';
+import 'package:project_24ct_lenhatnam/frontend/man_hinh/dang_nhap.dart';
 
 void main() {
   testWidgets('Kiểm tra ứng dụng Cointap khởi động vào màn hình Đăng nhập', (WidgetTester tester) async {

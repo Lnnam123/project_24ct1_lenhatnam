@@ -141,51 +141,57 @@ project_24ct_lenhatnam/
 │   ├── schema_admins.sql                 # Bảng quản trị viên và quyền hạn
 │   ├── schema_ai_chat.sql                # Bảng lưu trữ phiên và tin nhắn AI Chat
 │   └── supabase_database_export.sql      # Dữ liệu xuất mẫu
-├── lib/                                  # MÃ NGUỒN CHÍNH FLUTTER MOBILE
-│   ├── main.dart                         # Điểm khởi chạy ứng dụng & định tuyến
-│   ├── chu_de/                           # Hệ thống thiết kế màu sắc và giao diện
-│   │   └── mau_sac.dart
-│   ├── dich_vu/                          # Tầng dịch vụ giao tiếp ngoại vi
-│   │   ├── email_service.dart            # Gửi mã OTP xác thực qua Email (SMTP)
-│   │   ├── notification_service.dart     # Quản lý thông báo local
-│   │   ├── time_service.dart             # Xử lý múi giờ và định dạng thời gian
-│   │   └── update_service.dart           # Kiểm tra và cập nhật ứng dụng OTA từ GitHub
-│   ├── du_lieu/                          # Tầng giao tiếp dữ liệu Supabase
-│   │   └── database_helper.dart          # Lớp Singleton thực hiện CRUD dữ liệu
-│   ├── mo_hinh/                          # Các lớp đối tượng dữ liệu (Models)
-│   │   └── du_lieu.dart                  # NguoiDung, GiaoDich, ViTien, DanhMuc, NganSach...
-│   ├── man_hinh/                         # Các màn hình người dùng (Views / Screens)
-│   │   ├── bao_cao.dart                  # Màn hình biểu đồ báo cáo tài chính
-│   │   ├── cai_dat.dart                  # Cài đặt, bảo mật, thông tin phiên bản
-│   │   ├── chi_tiet_giao_dich.dart       # Chi tiết và lịch sử chỉnh sửa giao dịch
-│   │   ├── chi_tiet_phan_tich.dart       # Phân tích sâu dòng tiền theo danh mục
-│   │   ├── chi_tiet_thu_chi.dart         # Danh sách phân loại các khoản thu chi
-│   │   ├── chi_tiet_vi.dart              # Quản lý số dư và giao dịch theo từng ví
-│   │   ├── dang_ky.dart                  # Đăng ký tài khoản người dùng
-│   │   ├── dang_nhap.dart                # Đăng nhập bằng Email / Mật khẩu
-│   │   ├── dang_nhap_nhanh.dart          # Đăng nhập nhanh bằng mã PIN cá nhân / Sinh trắc học
-│   │   ├── dat_lai_mat_khau.dart         # Đặt lại mật khẩu mới sau khi xác thực OTP
-│   │   ├── dieu_khoan.dart               # Điều khoản dịch vụ và chính sách bảo mật
-│   │   ├── doi_mat_khau.dart             # Đổi mật khẩu trong tài khoản
-│   │   ├── quan_ly_danh_muc.dart         # Quản lý danh mục cá nhân hóa
-│   │   ├── quan_ly_ngan_sach.dart        # Thiết lập và theo dõi hạn mức ngân sách
-│   │   ├── quen_mat_khau.dart            # Yêu cầu gửi OTP quên mật khẩu
-│   │   ├── them_danh_muc.dart            # Thêm mới danh mục kèm chọn icon phong phú
-│   │   ├── thong_bao.dart                # Hộp thư thông báo hệ thống
-│   │   ├── thong_tin_ca_nhan.dart        # Cập nhật thông tin và hồ sơ cá nhân
-│   │   ├── tong_quan.dart                # Dashboard tổng quan tài chính
-│   │   ├── tro_ly_ai.dart                # Màn hình trò chuyện chuyên sâu với Gemini AI
-│   │   ├── vi_tien.dart                  # Quản lý danh sách các tài khoản ví
-│   │   └── xac_thuc_otp.dart             # Xác minh mã OTP 6 chữ số
-│   ├── thanh_phan/                       # Các Widget tái sử dụng (Components)
-│   │   ├── modal_doi_danh_muc.dart       # Bottom sheet đổi danh mục
-│   │   ├── modal_ngan_sach.dart          # Modal thêm / sửa ngân sách
-│   │   ├── modal_quan_ly_vi_tien.dart    # Modal thêm / sửa ví tiền
-│   │   ├── modal_them_giao_dich.dart     # Modal thêm giao dịch đa chức năng
-│   │   ├── nut_ai_chat_floating.dart     # Nút AI nổi di chuyển tự do trên màn hình
-│   │   └── skeleton_loading.dart         # Hiệu ứng Shimmer khi tải dữ liệu
-│   └── tien_ich/                         # Tiện ích bổ trợ
-│       └── bieu_tuong_helper.dart        # Bản đồ biểu tượng Google Material Symbols
+├── lib/                                  # MÃ NGUỒN CHÍNH FLUTTER (MÔ HÌNH PHÂN TẦNG FRONTEND - BACKEND)
+│   ├── main.dart                         # Điểm khởi chạy ứng dụng & điều phối luồng chính
+│   │
+│   ├── frontend/                         # TẦNG GIAO DIỆN & TRẢI NGHIỆM NGƯỜI DÙNG (PRESENTATION LAYER)
+│   │   ├── chu_de/                       # Hệ thống thiết kế màu sắc và chủ đề (Design System / Theme)
+│   │   │   └── mau_sac.dart              # Bảng màu chủ đạo, chế độ màu sáng/tối
+│   │   ├── man_hinh/                     # Các màn hình người dùng (Views / Screens)
+│   │   │   ├── bao_cao.dart              # Màn hình biểu đồ báo cáo tài chính
+│   │   │   ├── cai_dat.dart              # Cài đặt, bảo mật, thông tin phiên bản
+│   │   │   ├── chi_tiet_giao_dich.dart   # Chi tiết và lịch sử chỉnh sửa giao dịch
+│   │   │   ├── chi_tiet_phan_tich.dart   # Phân tích sâu dòng tiền theo danh mục
+│   │   │   ├── chi_tiet_thu_chi.dart     # Danh sách phân loại các khoản thu chi
+│   │   │   ├── chi_tiet_vi.dart          # Quản lý số dư và giao dịch theo từng ví
+│   │   │   ├── dang_ky.dart              # Đăng ký tài khoản người dùng mới
+│   │   │   ├── dang_nhap.dart            # Đăng nhập bằng Email / Mật khẩu
+│   │   │   ├── dang_nhap_nhanh.dart      # Đăng nhập nhanh bằng mã PIN cá nhân / Sinh trắc học
+│   │   │   ├── dat_lai_mat_khau.dart     # Đặt lại mật khẩu mới sau khi xác thực OTP
+│   │   │   ├── dieu_khoan.dart           # Điều khoản dịch vụ và chính sách bảo mật
+│   │   │   ├── doi_mat_khau.dart         # Đổi mật khẩu trong tài khoản
+│   │   │   ├── quan_ly_danh_muc.dart     # Quản lý danh mục cá nhân hóa
+│   │   │   ├── quan_ly_ngan_sach.dart    # Thiết lập và theo dõi hạn mức ngân sách
+│   │   │   ├── quen_mat_khau.dart        # Yêu cầu gửi OTP quên mật khẩu
+│   │   │   ├── them_danh_muc.dart        # Thêm mới danh mục kèm chọn icon phong phú
+│   │   │   ├── thong_bao.dart            # Hộp thư thông báo hệ thống
+│   │   │   ├── thong_tin_ca_nhan.dart    # Cập nhật thông tin và hồ sơ cá nhân
+│   │   │   ├── tong_quan.dart            # Dashboard tổng quan tài chính (Trang chủ)
+│   │   │   ├── tro_ly_ai.dart            # Màn hình trò chuyện chuyên sâu với Gemini AI
+│   │   │   ├── vi_tien.dart              # Quản lý danh sách các tài khoản ví
+│   │   │   └── xac_thuc_otp.dart         # Xác minh mã OTP 6 chữ số
+│   │   └── thanh_phan/                   # Các Widget & Modal tái sử dụng (Components)
+│   │       ├── modal_doi_danh_muc.dart   # Bottom sheet đổi danh mục nhanh
+│   │       ├── modal_ngan_sach.dart      # Modal thêm / sửa ngân sách
+│   │       ├── modal_quan_ly_vi_tien.dart# Modal thêm / sửa ví tiền
+│   │       ├── modal_them_giao_dich.dart # Modal thêm giao dịch đa chức năng
+│   │       ├── nut_ai_chat_floating.dart # Nút AI nổi di chuyển tự do trên màn hình
+│   │       └── skeleton_loading.dart     # Hiệu ứng Shimmer khi tải dữ liệu
+│   │
+│   └── backend/                          # TẦNG DỮ LIỆU, DỊCH VỤ & NGHIỆP VỤ (DATA & BUSINESS LOGIC)
+│       ├── database/                     # Quản lý truy vấn và giao tiếp cơ sở dữ liệu Supabase
+│       │   └── database_service.dart     # Dịch vụ CRUD trung tâm (Auth, Wallets, Transactions, Budgets, AI...)
+│       ├── models/                       # Các mô hình thực thể dữ liệu (Data Models / Entities)
+│       │   └── models.dart               # NguoiDung, GiaoDich, ViTien, DanhMuc, NganSach, ThongBao
+│       ├── services/                     # Tầng dịch vụ hệ thống và ngoại vi
+│       │   ├── email_service.dart        # Gửi mã OTP xác thực qua Email (SMTP Gmail)
+│       │   ├── notification_service.dart # Quản lý, đồng bộ và tự động tạo thông báo thông minh
+│       │   ├── time_service.dart         # Lấy thời gian chuẩn Internet chống gian lận chỉnh giờ
+│       │   └── update_service.dart       # Kiểm tra và cập nhật ứng dụng tự động OTA từ GitHub
+│       └── utils/                        # Tiện ích bổ trợ và helper
+│           └── icon_helper.dart          # Bộ bản đồ ánh xạ biểu tượng Google Material Symbols
+├── test/                                 # MÃ NGUỒN KIỂM THỬ TỰ ĐỘNG (AUTOMATED TESTING)
+│   └── widget_test.dart                  # Kiểm thử tự động giao diện màn hình Đăng nhập (Widget Test)
 ├── web_admin/                            # MÃ NGUỒN CỔNG QUẢN TRỊ ADMIN (REACT + VITE)
 │   ├── src/
 │   │   ├── dich_vu/                      # API kết nối Supabase Client

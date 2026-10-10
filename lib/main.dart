@@ -3,26 +3,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'mo_hinh/du_lieu.dart';
-import 'man_hinh/tong_quan.dart';
-import 'man_hinh/bao_cao.dart';
-import 'man_hinh/vi_tien.dart';
-import 'man_hinh/cai_dat.dart';
-import 'man_hinh/dang_nhap.dart';
-import 'man_hinh/thong_bao.dart';
-import 'chu_de/mau_sac.dart';
-import 'thanh_phan/modal_them_giao_dich.dart';
-import 'thanh_phan/skeleton_loading.dart';
-import 'thanh_phan/modal_quan_ly_vi_tien.dart';
-import 'du_lieu/database_helper.dart';
-import 'dich_vu/update_service.dart';
-import 'dich_vu/notification_service.dart';
-import 'thanh_phan/nut_ai_chat_floating.dart';
+import 'backend/models/models.dart';
+import 'frontend/man_hinh/tong_quan.dart';
+import 'frontend/man_hinh/bao_cao.dart';
+import 'frontend/man_hinh/vi_tien.dart';
+import 'frontend/man_hinh/cai_dat.dart';
+import 'frontend/man_hinh/dang_nhap.dart';
+import 'frontend/man_hinh/thong_bao.dart';
+import 'frontend/chu_de/mau_sac.dart';
+import 'frontend/thanh_phan/modal_them_giao_dich.dart';
+import 'frontend/thanh_phan/skeleton_loading.dart';
+import 'frontend/thanh_phan/modal_quan_ly_vi_tien.dart';
+import 'backend/database/database_service.dart';
+import 'backend/services/update_service.dart';
+import 'backend/services/notification_service.dart';
+import 'frontend/thanh_phan/nut_ai_chat_floating.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import 'man_hinh/dang_nhap_nhanh.dart';
+import 'frontend/man_hinh/dang_nhap_nhanh.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -125,6 +125,9 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
     super.dispose();
   }
 
+  /// [Lắng nghe trạng thái tài khoản thời gian thực]:
+  /// 1. Dùng Supabase Realtime WebSocket lắng nghe tức thì khi admin cập nhật trạng thái (`LOCKED`, `SUSPENDED`, `DELETED`).
+  /// 2. Kèm Heartbeat polling 3 giây dự phòng khi mất kết nối mạng / ngắt WebSocket.
   void _langNgheTrangThaiTaiKhoanRealtime() {
     // 1. Lắng nghe tức thì qua Supabase Realtime WebSocket
     _userStatusRealtimeChannel = Supabase.instance.client
@@ -158,17 +161,19 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
     // 2. Heartbeat polling 3 giây song song dự phòng mất kết nối socket
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
       if (_isShowingBlockDialog || !mounted) return;
-      final status = await DatabaseHelper.instance.checkUserStatus(widget.nguoiDung.id);
+      final status = await DatabaseService.instance.checkUserStatus(widget.nguoiDung.id);
       if (status != 'ACTIVE' && mounted && !_isShowingBlockDialog) {
         _hienThiDialogKhoaTaiKhoan(status);
       }
     });
   }
 
+  /// [Tải toàn bộ dữ liệu ứng dụng]:
+  /// Tải song song danh sách ví, danh mục, ngân sách, giao dịch và thông báo từ DatabaseService.
   Future<void> _taiDuLieuTuDatabase() async {
     setState(() => _isLoading = true);
 
-    final db = DatabaseHelper.instance;
+    final db = DatabaseService.instance;
 
     // Kiểm tra trạng thái tài khoản người dùng
     final userStatus = await db.checkUserStatus(widget.nguoiDung.id);
@@ -315,8 +320,10 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
     );
   }
 
+  /// [Tự động kiểm tra và cảnh báo ngân sách]:
+  /// Đối chiếu chi tiêu thực tế với hạn mức từng danh mục; nếu vượt sẽ tự động tạo thông báo cảnh báo trong hệ thống.
   Future<void> _kiemTraVaCanhBaoNganSach() async {
-    final notifications = await DatabaseHelper.instance.getNotifications(widget.nguoiDung.id);
+    final notifications = await DatabaseService.instance.getNotifications(widget.nguoiDung.id);
     final now = DateTime.now();
     bool hasNewNotification = false;
 
@@ -332,7 +339,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
         });
 
         if (!hasNotified) {
-          await DatabaseHelper.instance.insertNotification(
+          await DatabaseService.instance.insertNotification(
             widget.nguoiDung.id,
             title,
             'Bạn đã chi tiêu vượt quá hạn mức ngân sách ${budget.danhMuc?.ten ?? "tổng quát"} trong tháng này.',
@@ -344,7 +351,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
     }
 
     if (hasNewNotification) {
-      final updatedNotifs = await DatabaseHelper.instance.getNotifications(widget.nguoiDung.id);
+      final updatedNotifs = await DatabaseService.instance.getNotifications(widget.nguoiDung.id);
       if (mounted) {
         setState(() {
           _coThongBaoChuaDoc = updatedNotifs.any((n) => !n.daDoc);
@@ -353,9 +360,11 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
     }
   }
 
+  /// [Cập nhật hạn mức ngân sách]:
+  /// Lưu thay đổi ngân sách vào database và tải lại dữ liệu hiển thị.
   void _capNhatNganSach(NganSach nganSach) async {
     try {
-      await DatabaseHelper.instance.updateBudget(nganSach, widget.nguoiDung.id);
+      await DatabaseService.instance.updateBudget(nganSach, widget.nguoiDung.id);
       await _taiDuLieuTuDatabase();
 
       if (!mounted) return;
@@ -392,8 +401,10 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
     }
   }
 
+  /// [Xóa ngân sách]:
+  /// Xóa hạn mức ngân sách theo ID và làm mới danh sách.
   void _xoaNganSach(int budgetId) async {
-    await DatabaseHelper.instance.deleteBudget(budgetId);
+    await DatabaseService.instance.deleteBudget(budgetId);
     await _taiDuLieuTuDatabase();
 
     if (!mounted) return;
@@ -410,8 +421,10 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
     );
   }
 
+  /// [Thêm giao dịch mới]:
+  /// Ghi bản ghi giao dịch thu/chi vào Database, tự động tính lại số dư ví và kiểm tra cảnh báo ngân sách.
   void _themGiaoDich(GiaoDich giaoDich) async {
-    await DatabaseHelper.instance.insertTransaction(
+    await DatabaseService.instance.insertTransaction(
       giaoDich,
       widget.nguoiDung.id,
     );
@@ -435,8 +448,10 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
     );
   }
 
+  /// [Sửa giao dịch]:
+  /// Cập nhật thông tin giao dịch, hoàn tác và tính toán lại số dư ví tương ứng.
   void _suaGiaoDich(GiaoDich giaoDich) async {
-    await DatabaseHelper.instance.updateTransaction(giaoDich);
+    await DatabaseService.instance.updateTransaction(giaoDich);
     await _taiDuLieuTuDatabase();
     await _kiemTraVaCanhBaoNganSach();
 
@@ -458,7 +473,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
   }
 
   void _xoaGiaoDich(int id) async {
-    await DatabaseHelper.instance.deleteTransaction(id);
+    await DatabaseService.instance.deleteTransaction(id);
     await _taiDuLieuTuDatabase();
 
     if (!mounted) return;
@@ -520,7 +535,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
   }
 
   void _doiDanhMucGiaoDich(int transactionId, DanhMuc danhMucMoi) async {
-    await DatabaseHelper.instance.updateTransactionCategory(
+    await DatabaseService.instance.updateTransactionCategory(
       transactionId,
       danhMucMoi.id,
     );
@@ -544,7 +559,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
   }
 
   void _themViTien(ViTien viMoi) async {
-    await DatabaseHelper.instance.insertWallet(viMoi, widget.nguoiDung.id);
+    await DatabaseService.instance.insertWallet(viMoi, widget.nguoiDung.id);
     await _taiDuLieuTuDatabase();
 
     if (!mounted) return;
@@ -565,7 +580,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
   }
 
   void _capNhatViTien(ViTien viSua) async {
-    await DatabaseHelper.instance.updateWallet(viSua);
+    await DatabaseService.instance.updateWallet(viSua);
     await _taiDuLieuTuDatabase();
 
     if (!mounted) return;
@@ -586,7 +601,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
   }
 
   void _xoaViTien(int id) async {
-    await DatabaseHelper.instance.deleteWallet(id);
+    await DatabaseService.instance.deleteWallet(id);
     await _taiDuLieuTuDatabase();
 
     if (!mounted) return;
@@ -620,7 +635,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
   }
 
   void _themDanhMuc(DanhMuc danhMucMoi) async {
-    await DatabaseHelper.instance.insertCategory(
+    await DatabaseService.instance.insertCategory(
       danhMucMoi,
       widget.nguoiDung.id,
     );
@@ -644,7 +659,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
   }
 
   void _capNhatDanhMuc(DanhMuc danhMucSua) async {
-    await DatabaseHelper.instance.updateCategory(danhMucSua);
+    await DatabaseService.instance.updateCategory(danhMucSua);
     await _taiDuLieuTuDatabase();
 
     if (!mounted) return;
@@ -665,7 +680,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
   }
 
   void _xoaDanhMuc(int danhMucId) async {
-    await DatabaseHelper.instance.deleteCategory(danhMucId);
+    await DatabaseService.instance.deleteCategory(danhMucId);
     await _taiDuLieuTuDatabase();
 
     if (!mounted) return;
@@ -686,7 +701,7 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
   }
 
   void _capNhatNguoiDung(NguoiDung userMoi) async {
-    await DatabaseHelper.instance.updateUser(userMoi);
+    await DatabaseService.instance.updateUser(userMoi);
     if (!mounted) return;
     setState(() {
       _nguoiDungHienTai = userMoi;
@@ -890,3 +905,4 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
     );
   }
 }
+

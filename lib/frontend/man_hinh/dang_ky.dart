@@ -19,14 +19,29 @@ class _ManHinhDangKyState extends State<ManHinhDangKy> {
   bool _isLoading = false;
   bool _obscurePassword = true;
 
-  /// [Xử lý đăng ký tài khoản]:
-  /// Kiểm tra dữ liệu đầu vào (họ tên, email, mật khẩu), gọi `DatabaseService.instance.register`
-  /// và chuyển sang màn hình chính nếu thành công.
+  // =========================================================================
+  // [SƠ ĐỒ TUẦN TỰ - ĐĂNG KÝ]: BƯỚC 4 ĐẾN BƯỚC 12
+  // =========================================================================
+  /// - Bước 4: Giao diện (UI) gọi hàm `_dangKy()` trên State khi người dùng nhấn nút.
+  /// - Khối Alt [Xử lý đăng ký & Kiểm tra tài khoản tại Backend: Bước 5 đến 10]:
+  ///   + Bước 5: State gọi `DatabaseService.instance.checkEmailExists(email)`.
+  ///   + Bước 6: Supabase thực thi `SELECT email FROM nguoi_dung WHERE email = ?`.
+  ///   + Bước 7: CSDL trả về kết quả kiểm tra (tồn tại / chưa tồn tại).
+  ///   + Nhánh [Tài khoản chưa tồn tại]:
+  ///     * Bước 8: Gọi `register()` -> Supabase thực thi `INSERT INTO nguoi_dung`.
+  ///     * Bước 9: CSDL trả về kết quả tạo thành công (ma_nguoi_dung).
+  ///     * Bước 10: Trả về đối tượng `NguoiDung`.
+  ///   + Nhánh [Tài khoản đã tồn tại]:
+  ///     * Bước 10: Báo lỗi trùng lặp email.
+  /// - Bước 11: State điều khiển UI hiển thị thông báo SnackBar (Thành công / Lỗi).
+  /// - Bước 12: Điều hướng người dùng vào Màn hình chính (ManHinhChinh).
   void _dangKy() async {
+    // Lấy thông tin người dùng đã nhập ở Bước 3
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
+    // Kiểm tra tính hợp lệ của dữ liệu đầu vào
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin')),
@@ -37,6 +52,19 @@ class _ManHinhDangKyState extends State<ManHinhDangKy> {
     setState(() => _isLoading = true);
 
     try {
+      // [BƯỚC 5 -> 7]: Kiểm tra tài khoản đã tồn tại trong CSDL hay chưa
+      final daTonTai = await DatabaseService.instance.checkEmailExists(email);
+      if (daTonTai) {
+        setState(() => _isLoading = false); // tắt tính năng xoay chờ khi datonTai trả về True
+        if (!mounted) return;
+        // [BƯỚC 11]: Báo lỗi tài khoản đã tồn tại
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đăng ký thất bại: Email đã tồn tại trong hệ thống')),
+        );
+        return;
+      }
+
+      // [BƯỚC 8 -> 10]: Tài khoản chưa tồn tại -> Tiến hành tạo mới (INSERT INTO nguoi_dung)
       final user = await DatabaseService.instance.register(
         name,
         email,
@@ -46,6 +74,8 @@ class _ManHinhDangKyState extends State<ManHinhDangKy> {
       setState(() => _isLoading = false);
 
       if (!mounted) return;
+
+      // [BƯỚC 11]: Báo đăng ký thành công lên giao diện người dùng
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Đăng ký thành công!'),
@@ -53,7 +83,7 @@ class _ManHinhDangKyState extends State<ManHinhDangKy> {
         ),
       );
 
-      // Chuyển tới màn hình chính với user mới tạo
+      // [BƯỚC 12]: Điều hướng chuyển sang Màn hình chính (ManHinhChinh)
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => ManHinhChinh(nguoiDung: user)),
         (route) => false,
@@ -248,6 +278,10 @@ class _ManHinhDangKyState extends State<ManHinhDangKy> {
 
               const SizedBox(height: 32),
 
+              // =========================================================================
+              // [SƠ ĐỒ TUẦN TỰ - ĐĂNG KÝ]: BƯỚC 3
+              // Khách hàng nhập đầy đủ thông tin và nhấn nút bấm "ĐĂNG KÝ" -> Kích hoạt Bước 4 gọi _dangKy()
+              // =========================================================================
               SizedBox(
                 width: double.infinity,
                 height: 50,

@@ -5,9 +5,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/models.dart';
 import '../utils/icon_helper.dart';
 
+// =========================================================================
+// [LUỒNG KẾT NỐI CƠ SỞ DỮ LIỆU - BƯỚC 3]: LỚP DỊCH VỤ TRUY XUẤT DỮ LIỆU (DATA ACCESS LAYER)
+// Áp dụng mô hình thiết kế Singleton: Toàn bộ ứng dụng dùng chung duy nhất một cổng kết nối
+// Biến '_supabase' là cổng Client nhận lệnh truy vấn SQL (select, insert, update, delete)
+// và gửi trực tiếp lên máy chủ Supabase Database.
+// =========================================================================
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
   
+  // Cổng kết nối Client trực tiếp tới cơ sở dữ liệu Supabase
   final _supabase = Supabase.instance.client;
 
   DatabaseService._init();
@@ -16,17 +23,23 @@ class DatabaseService {
   // NHÓM 1: XÁC THỰC & QUẢN LÝ TÀI KHOẢN (AUTH)
   // ==========================================
 
-  /// [checkEmailExists]: Kiểm tra xem email đã được đăng ký trong hệ thống hay chưa.
-  /// - [email]: Địa chỉ email cần kiểm tra.
-  /// - Trả về `true` nếu đã tồn tại, `false` nếu chưa có.
+  // =========================================================================
+  // [SƠ ĐỒ TUẦN TỰ - ĐĂNG KÝ]: BƯỚC 5 ĐẾN BƯỚC 7 (KIỂM TRA TÀI KHOẢN ĐÃ TỒN TẠI)
+  // =========================================================================
+  /// - Bước 5: State gọi `checkEmailExists(email)` xuống DatabaseService.
+  /// - Bước 6: DatabaseService gửi truy vấn sang CSDL:
+  ///   `SELECT email FROM nguoi_dung WHERE email = ?`
+  /// - Bước 7: Bảng `nguoi_dung` trả về kết quả (true nếu đã tồn tại, false nếu chưa).
   Future<bool> checkEmailExists(String email) async {
     try {
+      // [BƯỚC 6]: Gửi câu lệnh truy vấn tới bảng 'nguoi_dung' trên Supabase
       final response = await _supabase
           .from('nguoi_dung')
           .select('email')
           .eq('email', email)
           .maybeSingle();
-      return response != null;
+      // [BƯỚC 7]: Trả kết quả kiểm tra về cho State
+      return response != null; // trả về true (xác nhận email nằm trong bảng nguoi_dung)
     } catch (e) {
       debugPrint('Lỗi check email: $e');
       return false;
@@ -139,15 +152,15 @@ class DatabaseService {
     }
   }
 
-  /// [register]: Đăng ký tài khoản người dùng mới.
-  /// - [name]: Họ và tên người dùng.
-  /// - [email]: Email đăng nhập.
-  /// - [password]: Mật khẩu tài khoản.
-  /// - Tự động tạo một "Ví Tiền Mặt" mặc định trong bảng `vi_tien`.
-  /// - Trả về đối tượng [NguoiDung] đã tạo.
+  // =========================================================================
+  // [SƠ ĐỒ TUẦN TỰ - ĐĂNG KÝ]: BƯỚC 8 ĐẾN BƯỚC 10 (KHỐI ALT - TẠO MỚI TÀI KHOẢN)
+  // =========================================================================
+  /// - Bước 8: State gọi `register()` -> DatabaseService gửi lệnh `INSERT INTO nguoi_dung`.
+  /// - Bước 9: CSDL tạo tài khoản và ví mặc định thành công, trả về kết quả (ID người dùng).
+  /// - Bước 10: Đóng gói và trả về đối tượng `NguoiDung` cho State (hoặc ném ngoại lệ nếu trùng lặp).
   Future<NguoiDung> register(String name, String email, String password) async {
     try {
-      // Postgres duplicate entry error will throw an exception
+      // [BƯỚC 8]: Chèn bản ghi tài khoản mới vào bảng 'nguoi_dung' trên Supabase
       final response = await _supabase
           .from('nguoi_dung')
           .insert({
@@ -160,7 +173,7 @@ class DatabaseService {
 
       final userId = response['ma_nguoi_dung'] ?? response['user_id'];
 
-      // Tạo ví mặc định
+      // [BƯỚC 9]: Tự động tạo một "Ví Tiền Mặt" mặc định trong bảng 'vi_tien'
       await _supabase.from('vi_tien').insert({
         'ma_nguoi_dung': userId,
         'ten_vi': 'Ví Tiền Mặt',
@@ -170,6 +183,7 @@ class DatabaseService {
         'mau_sac': '#10B981',
       });
 
+      // [BƯỚC 10]: Trả về đối tượng NguoiDung cho State
       return NguoiDung(
         id: userId,
         hoTen: name,
@@ -179,6 +193,7 @@ class DatabaseService {
       );
     } catch (e) {
       debugPrint('Lỗi register: $e');
+      // [BƯỚC 10 - Nhánh lỗi]: Bắt lỗi trùng email từ CSDL và ném ngoại lệ
       if (e.toString().contains('23505') || e.toString().contains('duplicate key')) {
         throw Exception('Email đã tồn tại');
       }

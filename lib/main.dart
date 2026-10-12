@@ -29,8 +29,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // =========================================================================
+  // [LUỒNG KẾT NỐI CƠ SỞ DỮ LIỆU - BƯỚC 1]: NẠP CẤU HÌNH BẢO MẬT TỪ FILE .ENV
+  // Đọc địa chỉ URL máy chủ (SUPABASE_URL) và khóa xác thực công khai (SUPABASE_ANON_KEY)
+  // =========================================================================
   await dotenv.load(fileName: ".env");
 
+  // =========================================================================
+  // [LUỒNG KẾT NỐI CƠ SỞ DỮ LIỆU - BƯỚC 2]: KHỞI TẠO KẾT NỐI TOÀN CỤC SUPABASE
+  // Thiết lập đường truyền WebSocket và REST API kết nối app với máy chủ PostgreSQL
+  // Toàn bộ các Service trong ứng dụng sẽ dùng phiên kết nối này thông qua Supabase.instance.client
+  // =========================================================================
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL'] ?? '',
     anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',

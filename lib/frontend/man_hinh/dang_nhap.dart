@@ -56,12 +56,23 @@ class _ManHinhDangNhapState extends State<ManHinhDangNhap> {
     }
   }
 
-  /// [Xử lý đăng nhập tài khoản]:
-  /// Gọi `DatabaseService.instance.login`, lưu thông tin phiên vào SharedPreferences và mở Màn hình chính.
+  // =========================================================================
+  // [SƠ ĐỒ TUẦN TỰ - ĐĂNG NHẬP]: BƯỚC 4 ĐẾN BƯỚC 10
+  // =========================================================================
+  /// - Bước 4: Giao diện (UI) gọi hàm `_dangNhap()` trên State khi người dùng nhấn nút.
+  /// - Khối Alt [Xử lý đăng nhập]:
+  ///   + Bước 5: Gọi `DatabaseService.instance.login(email, password)`.
+  ///   + Bước 6: Supabase thực thi `SELECT * FROM nguoi_dung WHERE email=? AND mat_khau=?`.
+  ///   + Bước 7: CSDL trả về bản ghi xác thực người dùng.
+  ///   + Bước 8: Trả về đối tượng `NguoiDung`.
+  /// - Bước 9: State lưu phiên đăng nhập (SharedPreferences) & báo đăng nhập thành công.
+  /// - Bước 10: Điều hướng người dùng chuyển vào Màn hình chính (ManHinhChinh).
   void _dangNhap() async {
+    // Lấy thông tin người dùng đã nhập ở Bước 3
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
+    // Kiểm tra tính hợp lệ dữ liệu đầu vào
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin')),
@@ -71,17 +82,20 @@ class _ManHinhDangNhapState extends State<ManHinhDangNhap> {
 
     setState(() => _isLoading = true);
     try {
+      // [BƯỚC 5 -> 8]: Xử lý xác thực tại Backend (DatabaseService & CSDL Supabase)
       final user = await DatabaseService.instance.login(email, password);
       setState(() => _isLoading = false);
 
       if (user != null) {
+        // [BƯỚC 9]: Lưu phiên đăng nhập người dùng vào SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         await prefs.setInt('saved_user_id', user.id);
         await prefs.setString('saved_user_name', user.hoTen);
         await prefs.setString('saved_user_email', user.email);
 
         if (!mounted) return;
-        // hàm trả về màn hình chính khi người dùng đăng nhập được
+
+        // [BƯỚC 10]: Điều hướng chuyển người dùng vào Màn hình chính (ManHinhChinh)
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => ManHinhChinh(nguoiDung: user)),
         );
@@ -252,6 +266,10 @@ class _ManHinhDangNhapState extends State<ManHinhDangNhap> {
               ),
               const SizedBox(height: 24),
 
+              // =========================================================================
+              // [SƠ ĐỒ TUẦN TỰ - ĐĂNG NHẬP]: BƯỚC 3
+              // Khách hàng nhập Email, Mật khẩu & bấm nút "ĐĂNG NHẬP" -> Kích hoạt Bước 4 gọi _dangNhap()
+              // =========================================================================
               SizedBox(
                 width: double.infinity,
                 height: 50,

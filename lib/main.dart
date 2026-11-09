@@ -15,6 +15,8 @@ import 'frontend/thanh_phan/modal_them_giao_dich.dart';
 import 'frontend/thanh_phan/skeleton_loading.dart';
 import 'frontend/thanh_phan/modal_quan_ly_vi_tien.dart';
 import 'backend/database/database_service.dart';
+import 'backend/controllers/xu_ly_ngan_sach.dart';
+import 'backend/controllers/xu_ly_giao_dich.dart';
 import 'backend/services/update_service.dart';
 import 'backend/services/notification_service.dart';
 import 'frontend/thanh_phan/nut_ai_chat_floating.dart';
@@ -371,9 +373,12 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
 
   /// [Cập nhật hạn mức ngân sách]:
   /// Lưu thay đổi ngân sách vào database và tải lại dữ liệu hiển thị.
-  void _capNhatNganSach(NganSach nganSach) async {
+  Future<void> _capNhatNganSach(NganSach nganSach) async {
     try {
-      await DatabaseService.instance.updateBudget(nganSach, widget.nguoiDung.id);
+      await XuLyNganSach.instance.xuLyLuuNganSach(
+        nganSach: nganSach,
+        userId: widget.nguoiDung.id,
+      );
       await _taiDuLieuTuDatabase();
 
       if (!mounted) return;
@@ -396,7 +401,89 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Lỗi khi lưu ngân sách: $e',
+            'Lỗi khi lưu ngân sách: ${e.toString().replaceAll('Exception: ', '')}',
+            style: GoogleFonts.manrope(),
+          ),
+          backgroundColor: MauSac.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      rethrow;
+    }
+  }
+
+  /// [Xóa ngân sách]:
+  /// Xóa hạn mức ngân sách theo ID và làm mới danh sách.
+  Future<void> _xoaNganSach(int budgetId) async {
+    try {
+      await DatabaseService.instance.deleteBudget(budgetId);
+      await _taiDuLieuTuDatabase();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đã xóa ngân sách!', style: GoogleFonts.manrope()),
+          backgroundColor: MauSac.success,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi khi xóa ngân sách: $e', style: GoogleFonts.manrope()),
+          backgroundColor: MauSac.error,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      rethrow;
+    }
+  }
+
+  /// [Thêm giao dịch mới]:
+  /// Gọi Controller xử lý kiểm tra số dư và ghi bản ghi giao dịch thu/chi vào Database, tự động tính lại số dư ví và cảnh báo ngân sách.
+  void _themGiaoDich(GiaoDich giaoDich) async {
+    try {
+      await XuLyGiaoDich.instance.xuLyThemGiaoDich(
+        tx: giaoDich,
+        userId: widget.nguoiDung.id,
+      );
+      await _taiDuLieuTuDatabase();
+      await _kiemTraVaCanhBaoNganSach();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Đã lưu giao dịch vào cơ sở dữ liệu!',
+            style: GoogleFonts.manrope(),
+          ),
+          backgroundColor: MauSac.success,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Lỗi khi thêm giao dịch: ${e.toString().replaceAll('Exception: ', '')}',
             style: GoogleFonts.manrope(),
           ),
           backgroundColor: MauSac.error,
@@ -408,53 +495,6 @@ class _ManHinhChinhState extends State<ManHinhChinh> {
         ),
       );
     }
-  }
-
-  /// [Xóa ngân sách]:
-  /// Xóa hạn mức ngân sách theo ID và làm mới danh sách.
-  void _xoaNganSach(int budgetId) async {
-    await DatabaseService.instance.deleteBudget(budgetId);
-    await _taiDuLieuTuDatabase();
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Đã xóa ngân sách!', style: GoogleFonts.manrope()),
-        backgroundColor: MauSac.success,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
-  }
-
-  /// [Thêm giao dịch mới]:
-  /// Ghi bản ghi giao dịch thu/chi vào Database, tự động tính lại số dư ví và kiểm tra cảnh báo ngân sách.
-  void _themGiaoDich(GiaoDich giaoDich) async {
-    await DatabaseService.instance.insertTransaction(
-      giaoDich,
-      widget.nguoiDung.id,
-    );
-    await _taiDuLieuTuDatabase();
-    await _kiemTraVaCanhBaoNganSach();
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Đã lưu giao dịch vào cơ sở dữ liệu!',
-          style: GoogleFonts.manrope(),
-        ),
-        backgroundColor: MauSac.success,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
   }
 
   /// [Sửa giao dịch]:

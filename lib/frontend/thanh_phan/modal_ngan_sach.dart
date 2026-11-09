@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../backend/models/models.dart';
@@ -41,8 +41,9 @@ class CurrencyInputFormatter extends TextInputFormatter {
 class ModalNganSach extends StatefulWidget {
   final NganSach? nganSachCu;
   final List<DanhMuc> danhSachDanhMuc;
-  final Function(NganSach) onCapNhatNganSach;
-  final Function(int)? onXoaNganSach;
+  final Future<void> Function(NganSach) onCapNhatNganSach;
+  final Future<void> Function(int)? onXoaNganSach;
+  final DateTime? thangMacDinh;
 
   const ModalNganSach({
     super.key,
@@ -50,6 +51,7 @@ class ModalNganSach extends StatefulWidget {
     required this.danhSachDanhMuc,
     required this.onCapNhatNganSach,
     this.onXoaNganSach,
+    this.thangMacDinh,
   });
 
   @override
@@ -60,6 +62,7 @@ class _ModalNganSachState extends State<ModalNganSach> {
   final _amountController = TextEditingController();
   DanhMuc? _danhMucChon;
   DateTime _thangApDung = DateTime.now();
+  bool _dangLuu = false;
 
   @override
   void initState() {
@@ -79,10 +82,14 @@ class _ModalNganSachState extends State<ModalNganSach> {
         }
       }
       _amountController.text = formattedText;
+    } else if (widget.thangMacDinh != null) {
+      _thangApDung = widget.thangMacDinh!;
     }
   }
 
-  void _luuNganSach() {
+  void _luuNganSach() async {
+    if (_dangLuu) return;
+
     final amountText = _amountController.text.replaceAll(',', '');
     final amount = double.tryParse(amountText) ?? 0;
 
@@ -94,19 +101,65 @@ class _ModalNganSachState extends State<ModalNganSach> {
     }
 
     final startOfMonth = DateTime(_thangApDung.year, _thangApDung.month, 1);
-    final endOfMonth = DateTime(_thangApDung.year, _thangApDung.month + 1, 0);
+    final endOfMonth = DateTime(_thangApDung.year, _thangApDung.month + 1, 0, 23, 59, 59);
 
     final nganSachMoi = NganSach(
       id: widget.nganSachCu?.id ?? 0,
       hanMuc: amount,
-      daChi: 0,
-      ngayBatDau: widget.nganSachCu?.ngayBatDau ?? startOfMonth,
-      ngayKetThuc: widget.nganSachCu?.ngayKetThuc ?? endOfMonth,
+      daChi: widget.nganSachCu?.daChi ?? 0,
+      ngayBatDau: startOfMonth,
+      ngayKetThuc: endOfMonth,
       danhMuc: _danhMucChon,
     );
 
-    widget.onCapNhatNganSach(nganSachMoi);
-    Navigator.of(context).pop();
+    setState(() => _dangLuu = true);
+    try {
+      await widget.onCapNhatNganSach(nganSachMoi);
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _dangLuu = false);
+      }
+    }
+  }
+
+  void _xoaNganSach() async {
+    if (widget.nganSachCu == null || widget.onXoaNganSach == null || _dangLuu) return;
+
+    final xacNhan = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Xác nhận xóa', style: GoogleFonts.manrope(fontWeight: FontWeight.bold)),
+        content: Text('Bạn có chắc chắn muốn xóa ngân sách này không?', style: GoogleFonts.manrope()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Hủy', style: GoogleFonts.manrope(color: MauSac.onSurfaceVariant)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: MauSac.error),
+            child: Text('Xóa', style: GoogleFonts.manrope(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (xacNhan != true || !mounted) return;
+
+    setState(() => _dangLuu = true);
+    try {
+      await widget.onXoaNganSach!(widget.nganSachCu!.id);
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _dangLuu = false);
+      }
+    }
   }
 
   @override
@@ -121,7 +174,7 @@ class _ModalNganSachState extends State<ModalNganSach> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Thiết lập ngân sách',
+          widget.nganSachCu != null ? 'Chỉnh sửa ngân sách' : 'Thiết lập ngân sách',
           style: GoogleFonts.manrope(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -352,10 +405,7 @@ class _ModalNganSachState extends State<ModalNganSach> {
                 children: [
                   if (widget.nganSachCu != null && widget.onXoaNganSach != null) ...[
                     IconButton(
-                      onPressed: () {
-                        widget.onXoaNganSach!(widget.nganSachCu!.id);
-                        Navigator.of(context).pop();
-                      },
+                      onPressed: _dangLuu ? null : _xoaNganSach,
                       icon: const Icon(Icons.delete_outline, color: MauSac.error),
                       style: IconButton.styleFrom(
                         backgroundColor: MauSac.error.withValues(alpha: 0.1),
@@ -367,7 +417,7 @@ class _ModalNganSachState extends State<ModalNganSach> {
                   ],
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _luuNganSach,
+                      onPressed: _dangLuu ? null : _luuNganSach,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: MauSac.primary,
                         foregroundColor: Colors.white,
@@ -377,13 +427,22 @@ class _ModalNganSachState extends State<ModalNganSach> {
                         ),
                         elevation: 0,
                       ),
-                      child: Text(
-                        'Lưu ngân sách',
-                        style: GoogleFonts.manrope(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: _dangLuu
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              widget.nganSachCu != null ? 'Cập nhật ngân sách' : 'Lưu ngân sách',
+                              style: GoogleFonts.manrope(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                 ],

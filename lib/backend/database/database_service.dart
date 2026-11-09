@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -11,6 +12,7 @@ import '../utils/icon_helper.dart';
 // Biến '_supabase' là cổng Client nhận lệnh truy vấn SQL (select, insert, update, delete)
 // và gửi trực tiếp lên máy chủ Supabase Database.
 // =========================================================================
+// lớp client thực thi truy vấn
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
   
@@ -18,6 +20,12 @@ class DatabaseService {
   final _supabase = Supabase.instance.client;
 
   DatabaseService._init();
+
+  /// [hashPassword]: Băm mật khẩu bằng thuật toán SHA-256 bảo mật cao
+  static String hashPassword(String password) {
+    final bytes = utf8.encode(password);
+    return sha256.convert(bytes).toString();
+  }
 
   // ==========================================
   // NHÓM 1: XÁC THỰC & QUẢN LÝ TÀI KHOẢN (AUTH)
@@ -36,8 +44,8 @@ class DatabaseService {
       final response = await _supabase
           .from('nguoi_dung')
           .select('email')
-          .eq('email', email)
-          .maybeSingle();
+          .eq('email', email) // so sánh giá trị của email (tên email) so sánh bằng 
+          .maybeSingle(); // phương thức truy vấn dữ liệu (gói package supabase flutter) -> null or đôi tượng
       // [BƯỚC 7]: Trả kết quả kiểm tra về cho State
       return response != null; // trả về true (xác nhận email nằm trong bảng nguoi_dung)
     } catch (e) {
@@ -46,19 +54,45 @@ class DatabaseService {
     }
   }
 
-  /// [login]: Đăng nhập tài khoản bằng email và mật khẩu.
-  /// - Kiểm tra tính chính xác của mật khẩu.
-  /// - Kiểm tra trạng thái tài khoản (`LOCKED` - bị khoá, `SUSPENDED` - tạm ngưng).
-  /// - Trả về đối tượng [NguoiDung] nếu thành công, hoặc `null` nếu sai thông tin.
+  // =========================================================================
+  // [SƠ ĐỒ TUẦN TỰ - ĐĂNG NHẬP]: BƯỚC 5 ĐẾN BƯỚC 8 (XÁC THỰC TÀI KHOẢN TẠI BACKEND)
+  // =========================================================================
+  /// - Bước 5: State gọi `login(email, password)` xuống DatabaseService.
+  /// - Bước 6: DatabaseService gửi truy vấn sang CSDL:
+  ///   `SELECT * FROM nguoi_dung WHERE email = ? AND mat_khau = ?`
+  /// - Bước 7: Bảng `nguoi_dung` trả về kết quả xác thực.
+  /// - Nhánh [Tài khoản đúng]:
+  ///   + Bước 8: Trả về đối tượng `NguoiDung` cho State.
+  /// - Nhánh [Tài khoản sai]:
+  ///   + Bước 8: Trả về `null` (thông tin không chính xác).
   Future<NguoiDung?> login(String email, String password) async {
     try {
-      final response = await _supabase
+      final hashed = hashPassword(password);
+      // [BƯỚC 6]: Gửi câu lệnh truy vấn tới bảng 'nguoi_dung' trên Supabase với mật khẩu băm SHA-256
+      var response = await _supabase
           .from('nguoi_dung')
           .select()
           .eq('email', email)
-          .eq('mat_khau', password)
+          .eq('mat_khau', hashed)
           .maybeSingle();
 
+      // Dự phòng tương thích ngược: Nếu tài khoản chưa được băm (chứa mật khẩu thô)
+      if (response == null) {
+        response = await _supabase
+            .from('nguoi_dung')
+            .select()
+            .eq('email', email)
+            .eq('mat_khau', password)
+            .maybeSingle();
+
+        if (response != null) {
+          // Tự động nâng cấp mã hóa lên SHA-256 trong CSDL
+          final uId = response['ma_nguoi_dung'] ?? response['user_id'];
+          await _supabase.from('nguoi_dung').update({'mat_khau': hashed}).eq('ma_nguoi_dung', uId);
+        }
+      }
+
+      // [BƯỚC 7]: Tiếp nhận kết quả xác thực từ CSDL
       if (response != null) {
         final trangThai = (response['trang_thai'] ?? 'ACTIVE').toString().toUpperCase();
         if (trangThai == 'LOCKED') {
@@ -68,6 +102,7 @@ class DatabaseService {
           throw Exception('Tài khoản của bạn đang tạm thời bị ngưng hoạt động!');
         }
 
+        // [BƯỚC 8 - Nhánh: Tài khoản đúng]: Đóng gói và trả về đối tượng NguoiDung
         return NguoiDung(
           id: response['ma_nguoi_dung'] ?? response['user_id'],
           hoTen: response['ho_ten'] ?? response['full_name'],
@@ -80,6 +115,7 @@ class DatabaseService {
       debugPrint('Lỗi login: $e');
       rethrow;
     }
+    // [BƯỚC 8 - Nhánh: Tài khoản sai]: Trả về null khi không tìm thấy tài khoản khớp
     return null;
   }
 
@@ -111,22 +147,33 @@ class DatabaseService {
   /// - Trả về `true` nếu đổi thành công, `false` nếu mật khẩu cũ không đúng.
   Future<bool> changePassword(int userId, String oldPassword, String newPassword) async {
     try {
-      // Xác minh mật khẩu cũ trước khi đổi
-      final response = await _supabase
+      final hashedOld = hashPassword(oldPassword);
+      // Xác minh mật khẩu cũ trước khi đổi (kiểm tra cả hashed lẫn raw)
+      var response = await _supabase
           .from('nguoi_dung')
           .select()
           .eq('ma_nguoi_dung', userId)
-          .eq('mat_khau', oldPassword)
+          .eq('mat_khau', hashedOld)
           .maybeSingle();
+
+      if (response == null) {
+        response = await _supabase
+            .from('nguoi_dung')
+            .select()
+            .eq('ma_nguoi_dung', userId)
+            .eq('mat_khau', oldPassword)
+            .maybeSingle();
+      }
 
       if (response == null) {
         return false; // Mật khẩu cũ không đúng
       }
 
-      // Cập nhật mật khẩu mới
+      // Cập nhật mật khẩu mới đã băm SHA-256
+      final hashedNew = hashPassword(newPassword);
       await _supabase
           .from('nguoi_dung')
-          .update({'mat_khau': newPassword})
+          .update({'mat_khau': hashedNew})
           .eq('ma_nguoi_dung', userId);
       return true;
     } catch (e) {
@@ -141,9 +188,10 @@ class DatabaseService {
   /// - Trả về `true` nếu thành công.
   Future<bool> resetPassword(String email, String newPassword) async {
     try {
+      final hashedNew = hashPassword(newPassword);
       await _supabase
           .from('nguoi_dung')
-          .update({'mat_khau': newPassword})
+          .update({'mat_khau': hashedNew})
           .eq('email', email);
       return true;
     } catch (e) {
@@ -160,13 +208,14 @@ class DatabaseService {
   /// - Bước 10: Đóng gói và trả về đối tượng `NguoiDung` cho State (hoặc ném ngoại lệ nếu trùng lặp).
   Future<NguoiDung> register(String name, String email, String password) async {
     try {
-      // [BƯỚC 8]: Chèn bản ghi tài khoản mới vào bảng 'nguoi_dung' trên Supabase
+      final hashed = hashPassword(password);
+      // [BƯỚC 8]: Chèn bản ghi tài khoản mới vào bảng 'nguoi_dung' trên Supabase với mật khẩu băm SHA-256
       final response = await _supabase
           .from('nguoi_dung')
           .insert({
             'ho_ten': name,
             'email': email,
-            'mat_khau': password,
+            'mat_khau': hashed,
           })
           .select()
           .single();
@@ -517,13 +566,80 @@ class DatabaseService {
     return [];
   }
 
+  // =========================================================================
+  // [SƠ ĐỒ TUẦN TỰ - HẠN MỨC NGÂN SÁCH]: BƯỚC 5 ĐẾN BƯỚC 8 (KIỂM TRA NGÂN SÁCH DANH MỤC)
+  // =========================================================================
+  /// - Bước 5: Controller gọi `checkBudgetExists(userId, maDanhMuc, thang)` xuống DatabaseService.
+  /// - Bước 6: DatabaseService gửi truy vấn sang CSDL kiểm tra:
+  ///   `SELECT ma_ngan_sach, ma_danh_muc, ngay_bat_dau FROM ngan_sach WHERE ma_nguoi_dung = ?`
+  /// - Bước 7: Bảng `ngan_sach` trả về danh sách bản ghi.
+  /// - Bước 8: Trả về kết quả kiểm tra (true nếu đã tồn tại trong tháng, false nếu chưa).
+  Future<bool> checkBudgetExists(int userId, int? maDanhMuc, String thang, {int? excludeBudgetId}) async {
+    try {
+      final response = await _supabase
+          .from('ngan_sach')
+          .select('ma_ngan_sach, ma_danh_muc, ngay_bat_dau')
+          .eq('ma_nguoi_dung', userId);
+
+      for (var row in response) {
+        final id = row['ma_ngan_sach'];
+        if (excludeBudgetId != null && id == excludeBudgetId) continue;
+        final catId = row['ma_danh_muc'];
+        if (catId != maDanhMuc) continue;
+
+        final startStr = row['ngay_bat_dau']?.toString();
+        if (startStr != null) {
+          final dt = DateTime.tryParse(startStr);
+          if (dt != null) {
+            final rowThang = '${dt.year}-${dt.month.toString().padLeft(2, '0')}';
+            if (rowThang == thang) return true;
+          }
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Lỗi checkBudgetExists: $e');
+      return false;
+    }
+  }
+
   /// [updateBudget]: Thêm mới hoặc cập nhật ngân sách chi tiêu.
-  /// - Nếu [nganSach.id] == 0: Thêm mới bản ghi ngân sách.
-  /// - Ngược lại: Cập nhật hạn mức ngân sách theo ID.
+  /// - Tự động phát hiện nếu danh mục đã tồn tại để cập nhật (Upsert) tránh lỗi ràng buộc CSDL `unique_user_category`.
+  /// - Cập nhật hạn mức ngân sách và khoảng thời gian áp dụng theo tháng.
   Future<void> updateBudget(NganSach nganSach, int userId) async {
     try {
-      if (nganSach.id == 0) {
-        // Insert
+      // 1. Kiểm tra các bản ghi ngân sách hiện tại của người dùng
+      final existingRows = await _supabase
+          .from('ngan_sach')
+          .select('ma_ngan_sach, ma_danh_muc')
+          .eq('ma_nguoi_dung', userId);
+
+      dynamic matchedRow;
+      for (var row in existingRows) {
+        if (row['ma_danh_muc'] == nganSach.danhMuc?.id) {
+          matchedRow = row;
+          break;
+        }
+      }
+
+      if (matchedRow != null) {
+        // Đã có bản ghi ngân sách cho danh mục này -> Cập nhật bản ghi đó
+        final targetId = matchedRow['ma_ngan_sach'];
+        await _supabase.from('ngan_sach').update({
+          'so_tien': nganSach.hanMuc,
+          'ngay_bat_dau': nganSach.ngayBatDau.toIso8601String(),
+          'ngay_ket_thuc': nganSach.ngayKetThuc.toIso8601String(),
+        }).eq('ma_ngan_sach', targetId);
+      } else if (nganSach.id != 0) {
+        // Cập nhật bản ghi theo ID nếu chưa đổi sang danh mục đã có
+        await _supabase.from('ngan_sach').update({
+          'ma_danh_muc': nganSach.danhMuc?.id,
+          'so_tien': nganSach.hanMuc,
+          'ngay_bat_dau': nganSach.ngayBatDau.toIso8601String(),
+          'ngay_ket_thuc': nganSach.ngayKetThuc.toIso8601String(),
+        }).eq('ma_ngan_sach', nganSach.id);
+      } else {
+        // Chưa có -> Thêm mới bản ghi ngân sách
         await _supabase.from('ngan_sach').insert({
           'ma_nguoi_dung': userId,
           'ma_danh_muc': nganSach.danhMuc?.id,
@@ -531,12 +647,6 @@ class DatabaseService {
           'ngay_bat_dau': nganSach.ngayBatDau.toIso8601String(),
           'ngay_ket_thuc': nganSach.ngayKetThuc.toIso8601String(),
         });
-      } else {
-        // Update
-        await _supabase.from('ngan_sach').update({
-          'ma_danh_muc': nganSach.danhMuc?.id,
-          'so_tien': nganSach.hanMuc,
-        }).eq('ma_ngan_sach', nganSach.id);
       }
     } catch (e) {
       debugPrint('Lỗi updateBudget: $e');
@@ -552,6 +662,32 @@ class DatabaseService {
     } catch (e) {
       debugPrint('Lỗi deleteBudget: $e');
       rethrow;
+    }
+  }
+
+  // =========================================================================
+  // [SƠ ĐỒ TUẦN TỰ - THÊM GIAO DỊCH]: BƯỚC 5 ĐẾN BƯỚC 8 (KIỂM TRA SỐ DƯ VÍ NGUỒN)
+  // =========================================================================
+  /// - Bước 5: Controller gọi `checkWalletBalance(maVi, soTien)` xuống DatabaseService.
+  /// - Bước 6: DatabaseService gửi truy vấn sang CSDL kiểm tra số dư ví:
+  ///   `SELECT so_du FROM vi_tien WHERE ma_vi = ?`
+  /// - Bước 7: Bảng `vi_tien` trả về bản ghi số dư ví.
+  /// - Bước 8: Trả về kết quả kiểm tra (true nếu đủ số dư chi tiêu, false nếu không đủ).
+  Future<bool> checkWalletBalance(int maVi, double soTien) async {
+    try {
+      final response = await _supabase
+          .from('vi_tien')
+          .select('so_du')
+          .eq('ma_vi', maVi)
+          .maybeSingle();
+      if (response != null) {
+        final soDu = (response['so_du'] as num?)?.toDouble() ?? 0.0;
+        return soDu >= soTien;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Lỗi checkWalletBalance: $e');
+      return false;
     }
   }
 

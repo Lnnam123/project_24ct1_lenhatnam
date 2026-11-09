@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,8 +23,8 @@ class ManHinhTongQuan extends StatefulWidget {
   final VoidCallback moThongBao;
   final Function(int, DanhMuc) onDoiDanhMucGiaoDich;
   final Future<void> Function() onRefresh;
-  final Function(NganSach) onCapNhatNganSach;
-  final Function(int) onXoaNganSach;
+  final Future<void> Function(NganSach) onCapNhatNganSach;
+  final Future<void> Function(int) onXoaNganSach;
   final bool coThongBaoChuaDoc;
 
   const ManHinhTongQuan({
@@ -72,18 +72,19 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
     return formatter.format(soTien);
   }
 
-  void _moManHinhNganSach() {
-    Navigator.of(context).push(
+  void _moManHinhNganSach() async {
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ManHinhQuanLyNganSach(
           userId: widget.nguoiDung.id,
           danhSachNganSachKhoiTao: widget.danhSachNganSach,
           danhSachDanhMuc: widget.danhSachDanhMuc,
-          onCapNhatNganSach: widget.onCapNhatNganSach,
-          onXoaNganSach: widget.onXoaNganSach,
+          onCapNhatNganSach: (ns) async => await widget.onCapNhatNganSach(ns),
+          onXoaNganSach: (id) async => await widget.onXoaNganSach(id),
         ),
       ),
     );
+    widget.onRefresh();
   }
 
   @override
@@ -358,11 +359,16 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
               // Budget Progress Widget
               Builder(
                 builder: (context) {
-                  final tongNganSach = widget.danhSachNganSach.fold<double>(
+                  final now = DateTime.now();
+                  final nganSachThangNay = widget.danhSachNganSach.where((ns) {
+                    return ns.ngayBatDau.year == now.year && ns.ngayBatDau.month == now.month;
+                  }).toList();
+
+                  final tongNganSach = nganSachThangNay.fold<double>(
                     0,
                     (sum, ns) => sum + ns.hanMuc,
                   );
-                  final tongDaChi = widget.danhSachNganSach.fold<double>(
+                  final tongDaChi = nganSachThangNay.fold<double>(
                     0,
                     (sum, ns) => sum + ns.daChi,
                   );
@@ -397,13 +403,22 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Ngân sách',
+                                'Ngân sách Tháng ${now.month}/${now.year}',
                                 style: GoogleFonts.manrope(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: MauSac.onSurface,
                                 ),
                               ),
+                              if (nganSachThangNay.isEmpty)
+                                Text(
+                                  '+ Thiết lập',
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: MauSac.primary,
+                                  ),
+                                ),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -898,6 +913,22 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                               color: MauSac.onSurface,
                             ),
                           ),
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                _anSoDu = !_anSoDu;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: Icon(
+                                _anSoDu ? Icons.visibility_off : Icons.visibility,
+                                color: MauSac.onSurfaceVariant,
+                                size: 20,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
@@ -934,7 +965,7 @@ class _ManHinhTongQuanState extends State<ManHinhTongQuan> {
                                 ],
                               ),
                               Text(
-                                _dinhDangTien(vi.soDu),
+                                _anSoDu ? '****** đ' : _dinhDangTien(vi.soDu),
                                 style: GoogleFonts.manrope(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
